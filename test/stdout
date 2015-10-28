@@ -1,0 +1,46 @@
+Requested Stripping20r1
+Trying to import module StrippingArchive.Stripping20r1
+# Register line: StrippingDiMuonAndGammaForCharmAssociative
+# Register line: StrippingDoubleDiMuonForCharmAssociative
+# Register line: StrippingChiAndDiMuonForCharmAssociative
+# Register line: StrippingDiChiForCharmAssociative
+# Register line: StrippingDiMuonAndWForCharmAssociative
+# Register line: StrippingChiAndWForCharmAssociative
+# WARNING: lineMBNoBias uses plain Gaudi configurable MBNoBiasORL. Consider using Selection instead!
+# WARNING: lineHlt1L0AnyRateLimited uses plain Gaudi configurable Hlt1L0AnyRateLimitedORL. Consider using Selection instead!
+# WARNING: lineB2hhh_KKK_inclLine uses plain Gaudi configurable B2hhhGlobalEventCutFilter. Consider using Selection instead!
+# WARNING: lineB2hhh_pph_inclLine uses plain Gaudi configurable B2hhhGlobalEventCutFilter. Consider using Selection instead!
+# WARNING: new configuration: TrackCuts        :  ( TRCHI2DOF < 5 ) & ( PT > 250 * MeV ) & ( TRGHOSTPROB < 0.5 ) & in_range  ( 2 , ETA , 5 )  
+Creating CharmToBeSwum stream with 14 lines
+Creating Bhadron stream with 277 lines
+Creating Semileptonic stream with 34 lines
+Creating BhadronCompleteEvent stream with 95 lines
+Creating Leptonic stream with 30 lines
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bu2InflatonK has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bs2InflatonPhi has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bd2InflatonKst has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bd2InflatonRho has prescale <= 0, it will be removed from stream Leptonic
+Creating PID stream with 15 lines
+Creating Dimuon stream with 96 lines
+# WARNING: Line StrippingTau23MuDs23PiLine has prescale <= 0, it will be removed from stream Dimuon
+# WARNING: Line StrippingInflaton2MuMuLongLine has prescale <= 0, it will be removed from stream Dimuon
+# WARNING: Line StrippingBs2MuMuLinesNoMuIDLooseLine has prescale <= 0, it will be removed from stream Dimuon
+Creating Calibration stream with 23 lines
+# WARNING: Line StrippingTriggerValidationD02KPiLine has prescale <= 0, it will be removed from stream Calibration
+# WARNING: Line StrippingTriggerValidationD2KPiPiLine has prescale <= 0, it will be removed from stream Calibration
+Creating Radiative stream with 32 lines
+Creating Charm stream with 202 lines
+Creating EW stream with 75 lines
+Creating MiniBias stream with 3 lines
+Creating CharmCompleteEvent stream with 79 lines
+# WARNING: Line StrippingD2hhhControl_PPPLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KPPosLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KKKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KKPosLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_HHHIncLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2KPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2KKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2PiPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptDst2D2KKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptDst2D2PiPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+Created <closed file 'test-stripping.py', mode 'w' at 0x7f99e8aff540>

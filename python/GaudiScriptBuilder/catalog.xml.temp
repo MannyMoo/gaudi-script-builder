@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!-- Edited By PoolXMLCatalog.py -->
+<!DOCTYPE POOLFILECATALOG SYSTEM "InMemory">
+<POOLFILECATALOG>
+
+<File ID="C62431C3-34D5-E211-B632-003048FEB9FA">
+   <physical>
+      <pfn filetype="ROOT_All" name="root://clhcbdlf.ads.rl.ac.uk//castor/ads.rl.ac.uk/prod/lhcb/MC/2012/ALLSTREAMS.DST/00024857/0000/00024857_00000001_1.allstreams.dst?svcClass=lhcbDst" se="RAL_MC-DST"/>
+      <metadata att_name="root://clhcbdlf.ads.rl.ac.uk//castor/ads.rl.ac.uk/prod/lhcb/MC/2012/ALLSTREAMS.DST/00024857/0000/00024857_00000001_1.allstreams.dst?svcClass=lhcbDst" att_value="RAL_MC-DST"/>
+   </physical>
+   <logical>
+      <lfn name="/lhcb/MC/2012/ALLSTREAMS.DST/00024857/0000/00024857_00000001_1.allstreams.dst"/>
+   </logical>
+</File>
+
+</POOLFILECATALOG>

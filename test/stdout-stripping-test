@@ -1,0 +1,316 @@
+# setting LC_ALL to "C"
+# --> Including file '/afs/cern.ch/user/m/malexand/code/gaudi-script-builder/test/_test-stripping.py'
+Requested Stripping20r1
+Trying to import module StrippingArchive.Stripping20r1
+# Register line: StrippingDiMuonAndGammaForCharmAssociative
+# Register line: StrippingDoubleDiMuonForCharmAssociative
+# Register line: StrippingChiAndDiMuonForCharmAssociative
+# Register line: StrippingDiChiForCharmAssociative
+# Register line: StrippingDiMuonAndWForCharmAssociative
+# Register line: StrippingChiAndWForCharmAssociative
+# WARNING: lineMBNoBias uses plain Gaudi configurable MBNoBiasORL. Consider using Selection instead!
+# WARNING: lineHlt1L0AnyRateLimited uses plain Gaudi configurable Hlt1L0AnyRateLimitedORL. Consider using Selection instead!
+# ConfiguredMuonIDs: Loaded configuration info M_2011_def
+# WARNING: lineB2hhh_KKK_inclLine uses plain Gaudi configurable B2hhhGlobalEventCutFilter. Consider using Selection instead!
+# WARNING: lineB2hhh_pph_inclLine uses plain Gaudi configurable B2hhhGlobalEventCutFilter. Consider using Selection instead!
+# WARNING: new configuration: TrackCuts        :  ( TRCHI2DOF < 5 ) & ( PT > 250 * MeV ) & ( TRGHOSTPROB < 0.5 ) & in_range  ( 2 , ETA , 5 )  
+Creating CharmToBeSwum stream with 14 lines
+Creating Bhadron stream with 277 lines
+Creating Semileptonic stream with 34 lines
+Creating BhadronCompleteEvent stream with 95 lines
+Creating Leptonic stream with 30 lines
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bu2InflatonK has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bs2InflatonPhi has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bd2InflatonKst has prescale <= 0, it will be removed from stream Leptonic
+# WARNING: Line StrippingInflaton2MuMuForMicro_Bd2InflatonRho has prescale <= 0, it will be removed from stream Leptonic
+Creating PID stream with 15 lines
+Creating Dimuon stream with 96 lines
+# WARNING: Line StrippingTau23MuDs23PiLine has prescale <= 0, it will be removed from stream Dimuon
+# WARNING: Line StrippingInflaton2MuMuLongLine has prescale <= 0, it will be removed from stream Dimuon
+# WARNING: Line StrippingBs2MuMuLinesNoMuIDLooseLine has prescale <= 0, it will be removed from stream Dimuon
+Creating Calibration stream with 23 lines
+# WARNING: Line StrippingTriggerValidationD02KPiLine has prescale <= 0, it will be removed from stream Calibration
+# WARNING: Line StrippingTriggerValidationD2KPiPiLine has prescale <= 0, it will be removed from stream Calibration
+Creating Radiative stream with 32 lines
+Creating Charm stream with 202 lines
+Creating EW stream with 75 lines
+Creating MiniBias stream with 3 lines
+Creating CharmCompleteEvent stream with 79 lines
+# WARNING: Line StrippingD2hhhControl_PPPLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KPPosLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KKKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_KKPosLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhhControl_HHHIncLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2KPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2KKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptD2PiPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptDst2D2KKLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# WARNING: Line StrippingD2hhWSCompleteEventPromptDst2D2PiPiLine has prescale <= 0, it will be removed from stream CharmCompleteEvent
+# DaVinci                   INFO    Applying DaVinci configuration
+# DaVinci                   INFO    /***** User DaVinci/DaVinci ************************************************************************
+|-MainOptions          = ''
+|-TupleFile            = 'DVTuples.root'  (default: '')
+|-SkipEvents           = 0
+|-RootCompressionLevel = 'LZMA:6'
+|-Input                = []  (default: [])
+|-DDDBtag              = 'Sim08-20130503'  (default: '')
+|-UserAlgorithms       = [<DecayTreeTuple/Dst2010ToD0ToKpipiTuple at 0x57f75d0>]  (default: [])
+|-RootInTES            = ''
+|-DQFLAGStag           = ''
+|-Lumi                 = True  (default: False)
+|-MoniSequence         = []  (default: [])
+|-VerboseMessages      = False
+|-IgnoreDQFlags        = False
+|-ProductionType       = 'None'
+|-PrintFreq            = 1000
+|-Detectors            = ['Velo', 'PuVeto', 'Rich1', 'Rich2', 'TT', 'IT', 'OT', 'Spd', 'Prs', 'Ecal', 'Hcal', 'Muon', 'Magnet', 'Tr']
+|                      (default: ['Velo', 'PuVeto', 'Rich1', 'Rich2', 'TT', 'IT', 'OT', 'Spd', 'Prs', 'Ecal', 'Hcal', 'Muon', 'Magnet', 'Tr'])
+|-EvtMax               = 1000  (default: -1)
+|-CondDBtag            = 'Sim08-20130503-vc-md100'  (default: '')
+|-Simulation           = True  (default: False)
+|-DataType             = '2011'  (default: '')
+|-RedoMCLinks          = False
+|-InputType            = 'DST'
+|-HistogramFile        = 'DVHistos.root'  (default: '')
+|-WriteFSR             = True
+|-EnableUnpack         = None
+|-EventPreFilters      = []  (default: [])
+\----- (End of User DaVinci/DaVinci) ---------------------------------------------------------------
+# DaVinci                   WARNING Lumi not valid for Simulation. Setting Lumi = False
+# DaVinci                   INFO    Creating Lumi Algorithms
+# DaVinci                   INFO    No MainOptions specified. DaVinci() will import no options file!
+# DaVinci                   INFO    Creating User Algorithms
+# DaVinci                   INFO    Append to Main Sequence has been called
+# DaVinci                   INFO    Creating Moni Algorithms
+# DaVinci                   INFO    Append to Moni Sequence has been called
+# WARNING: file '/afs/cern.ch/lhcb/software/releases/DBASE/TCK/L0TCK/v4r38/options/L0DUConfig.opts' already included, ignored.
+# WARNING: Using default tag dq-20140822 for partition DQFLAGS
+# WARNING: something else configured a decoder already, Raw/Spd/Digits CaloDigitsFromRaw/SpdFromRaw
+# WARNING: something else configured a decoder already, Trig/L0/Calo L0CaloCandidatesFromRaw/L0CaloFromRaw
+# WARNING: something else configured a decoder already, Trig/L0/FullCalo L0CaloCandidatesFromRaw/L0CaloFromRaw
+# WARNING: something else configured a decoder already, Trig/L0/L0DUReport L0DUFromRawAlg/L0DUFromRaw
+# WARNING: something else configured a decoder already, Raw/Prs/Digits CaloDigitsFromRaw/PrsFromRaw
+# WARNING: something else configured a decoder already, Raw/Ecal/Digits CaloZSupAlg/EcalZSup
+# WARNING: something else configured a decoder already, Raw/Hcal/Digits CaloZSupAlg/HcalZSup
+# WARNING: something else configured a decoder already, Trig/L0/MuonCtrl L0MuonCandidatesFromRaw/L0MuonFromRaw
+# WARNING: something else configured a decoder already, Trig/L0/MuonBCSU L0MuonCandidatesFromRaw/L0MuonFromRaw
+# WARNING: something else configured a decoder already, Trig/L0/MuonData L0MuonCandidatesFromRaw/L0MuonFromRaw
+# WARNING: Property 'EnableUnpack' is set in both 'DigiConf' and 'SimConf', using 'DigiConf.EnableUnpack'
+# WARNING: Property 'DataType' is set in both 'DigiConf' and 'SimConf', using 'DigiConf.DataType'
+ApplicationMgr    SUCCESS 
+====================================================================================================================================
+                                                   Welcome to DaVinci version v37r2p4
+                                          running on lxplus0094.cern.ch on Mon Oct 26 17:06:52 2015
+====================================================================================================================================
+ApplicationMgr       INFO Application Manager Configured successfully
+DetectorPersist...   INFO Added successfully Conversion service:XmlCnvSvc
+DetectorDataSvc   SUCCESS Detector description database: conddb:/lhcb.xml
+RndmGenSvc.Engine    INFO Generator engine type:CLHEP::RanluxEngine
+RndmGenSvc.Engine    INFO Current Seed:1234567 Luxury:3
+RndmGenSvc           INFO Using Random engine:HepRndm::Engine<CLHEP::RanluxEngine>
+TimingAuditor.T...   INFO This machine has a speed about   2.40 times the speed of a 2.8 GHz Xeon.
+NTupleSvc            INFO Added stream file:DVTuples.root as FILE1
+TransportSvc         INFO Initialize the static pointer to DetDesc::IGeometryErrorSvc
+TransportSvc         INFO Recovery of geometry errors is  ENABLED
+DaVinciEventSeq      INFO Member list: DaVinciInit/DaVinciInitAlg, GaudiSequencer/FilteredEventSeq, GaudiSequencer/LumiSeq
+DaVinciInitAlg    SUCCESS ==================================================================
+DaVinciInitAlg    SUCCESS Requested to process 1000 events
+DaVinciInitAlg    SUCCESS ==================================================================
+RootHistSvc          INFO Writing ROOT histograms to: DVHistos.root
+HistogramPersis...   INFO Added successfully Conversion service:RootHistSvc
+HistogramDataSvc     INFO Added stream file:/afs/cern.ch/lhcb/software/releases/PARAM/ParamFiles/v8r18/data/JetEnergyCorrections_R05_v3.root as JEC14R05
+HistogramDataSvc     INFO Added stream file:/afs/cern.ch/lhcb/software/releases/PARAM/ParamFiles/v8r18/data/JetEnergyCorrections_R07_v3.root as JEC14R07
+HistogramDataSvc     INFO Added stream file:/afs/cern.ch/lhcb/software/releases/PARAM/ParamFiles/v8r18/data/PhotonPdf.root as CaloNeutralPIDs
+HistogramDataSvc     INFO Added stream file:/afs/cern.ch/lhcb/software/releases/PARAM/ParamFiles/v8r18/data/CaloPIDs_DC09_v1.root as CaloPIDs
+FilteredEventSeq     INFO Member list: GaudiSequencer/DaVinciEventInitSeq, GaudiSequencer/DaVinciAnalysisSeq
+DaVinciEventIni...   INFO Member list: GaudiSequencer/PhysInitSeq, GaudiSequencer/AnalysisInitSeq
+PhysInitSeq          INFO Member list: 
+AnalysisInitSeq      INFO Member list: 
+DaVinciAnalysisSeq   INFO Member list: GaudiSequencer/DaVinciUserSequence, GaudiSequencer/MonitoringSequence
+DaVinciUserSequ...   INFO Member list: DecayTreeTuple/Dst2010ToD0ToKpipiTuple
+COOLConfSvc          INFO CORAL Connection Retrial Period set to 60s
+COOLConfSvc          INFO CORAL Connection Retrial Time-Out set to 900s
+DDDB                 INFO Connected to database "sqlite_file:/afs/cern.ch/lhcb/software/releases/SQLite/SQLDDDB/db/DDDB.db/DDDB"
+DDDB                 INFO Using TAG "Sim08-20130503"
+Dst2010ToD0ToKp...   INFO Will look for  ( ( D*(2010)+  -> ( D0  -> K-  pi+ )  pi+ ) || ( D*(2010)-  -> ( D~0  -> K+  pi- )  pi- ) ) 
+Dst2010ToD0ToKp...   INFO Explicit sub decays :1
+Dst2010ToD0ToKp...   INFO Dst2010ToD0ToKpipiTuple.Dst : ( ( D*(2010)+  -> ( D0  -> K-  pi+ )  pi+ ) || ( D*(2010)-  -> ( D~0  -> K+  pi- )  pi- ) ) 
+MonitoringSequence   INFO Member list: 
+LumiSeq              INFO OR Member list: EventAccounting/EventAccount
+EventPersistenc...   INFO Added successfully Conversion service:RootCnvSvc
+EventSelector        INFO Stream:EventSelector.DataStreamTool_1 Def:DATAFILE='LFN:/lhcb/MC/2011/ALLSTREAMS.DST/00026429/0000/00026429_00000001_1.allstreams.dst' SVC='Gaudi::RootEvtSelector' OPT='READ'
+ApplicationMgr       INFO Application Manager Initialized successfully
+ApplicationMgr       INFO Application Manager Started successfully
+EventSelector     SUCCESS Reading Event record 1. Record number within stream 1: 1
+Dst2010ToD0ToKp...   INFO The head of chain is a D*(2010)- : Will change to its antiparticle. Will change daughters to antiparticles. 
+Dst2010ToD0ToKp...   INFO PID Tunes = [MC12TuneV2, MC12TuneV3]
+SIMCOND              INFO Connected to database "sqlite_file:/afs/cern.ch/lhcb/software/releases/SQLite/SQLDDDB/db/SIMCOND.db/SIMCOND"
+SIMCOND              INFO Using TAG "Sim08-20130503-vc-md100"
+MagneticFieldSvc     INFO Opened magnetic field file : /afs/cern.ch/lhcb/software/releases/DBASE/FieldMap/v5r7/cdf/c1_onemap_down.cdf
+MagneticFieldSvc     INFO Opened magnetic field file : /afs/cern.ch/lhcb/software/releases/DBASE/FieldMap/v5r7/cdf/c2_onemap_down.cdf
+MagneticFieldSvc     INFO Opened magnetic field file : /afs/cern.ch/lhcb/software/releases/DBASE/FieldMap/v5r7/cdf/c3_onemap_down.cdf
+MagneticFieldSvc     INFO Opened magnetic field file : /afs/cern.ch/lhcb/software/releases/DBASE/FieldMap/v5r7/cdf/c4_onemap_down.cdf
+MagneticFieldSvc     INFO Map scaled by factor 1 with polarity internally used: -1 signed relative current: -1
+ToolSvc.HybridF...  ERROR  PyError Type      : <type 'exceptions.TypeError'>
+ToolSvc.HybridF...  ERROR  PyError Value     : none of the 2 overloaded methods succeeded. Full details:
+  LoKi::Particles::IsMuon constructor failed
+  LoKi::Particles::IsMuon::LoKi::Particles::IsMuon(const LoKi::Particles::IsMuon&) =>
+    takes at least 1 arguments (0 given)
+ToolSvc.HybridF...  ERROR  PyError Traceback : <traceback object at 0x7f4ccfa3ac20>
+ToolSvc.HybridF...  ERROR  Python error in Code
+Python error  : none of the 2 overloaded methods succeeded. Full details:
+  LoKi::Particles::IsMuon constructor failed
+  LoKi::Particles::IsMuon::LoKi::Particles::IsMuon(const LoKi::Particles::IsMuon&) =>
+    takes at least 1 arguments (0 given)
+
+ToolSvc.HybridF...  ERROR Native Python printout to stderr
+ToolSvc.HybridF...  ERROR End of native Python printout to stderr
+ToolSvc.HybridF...  ERROR  Error has occured in Python: the problematic code is : 
+ToolSvc.HybridF...  ERROR # ==============================================================================
+# python pseudomodule, generated for the tool 'ToolSvc.HybridFactory'
+# ==============================================================================
+# Arguments: 
+# 	code    = "DTF_FUN(CHILDFUN(BPVIPCHI2(), 1), False, 'D0')"
+# 	actor   = 'LoKi.Hybrid.Engine()'
+# 	modules = [ 'LoKiPhys.decorators' , 'LoKiProtoParticles.decorators' , 'LoKiArrayFunctors.decorators' , 'LoKiCore.functions' , 'LoKiCore.math' ]
+# 	lines   = [  ]
+# 	context = '
+##! '
+# ==============================================================================
+##        MODULES :
+from LoKiPhys.decorators import *
+from LoKiProtoParticles.decorators import *
+from LoKiArrayFunctors.decorators import *
+from LoKiCore.functions import *
+from LoKiCore.math import *
+## End of MODULES  
+## The ACTOR :
+_actor=LoKi.Hybrid.Engine()
+##        LINES :
+## end of LINES  
+##        CONTEXT :
+## End of CONTEXT  
+##        CODE :
+_code=DTF_FUN(CHILDFUN(BPVIPCHI2(), 1), False, 'D0')
+## End of CODE :
+sc=_actor.process('ToolSvc.HybridFactory',_code)
+# ==============================================================================
+# The END 
+# ==============================================================================
+
+ToolSvc.HybridF...  ERROR LoKi::Hybrid::Tool::  Error has occured in Python  StatusCode=FAILURE
+ToolSvc.HybridF...  ERROR LoKi::Hybrid::Tool:: Error from LoKi::Hybrid::Base::executeCode StatusCode=FAILURE
+ToolSvc.HybridF...  ERROR LoKi::Hybrid::Tool:: Invalid object for the code 'DTF_FUN(CHILDFUN(BPVIPCHI2(), 1), False, 'D0')' StatusCode=FAILURE
+Dst2010ToD0ToKp...  ERROR LoKi::Hybrid::TupleTool:: Unable to decode DTF_M_D0_BPVIPCHI2 : DTF_FUN(CHILDFUN(BPVIPCHI2(), 1), False, 'D0') StatusCode=FAILURE
+ToolSvc             ERROR Error initializing tool 'Dst2010ToD0ToKpipiTuple.Dst.DstLoKiTuple'
+Dst2010ToD0ToKp...  FATAL DecayTreeTuple:: Exception throw: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple' StatusCode=FAILURE
+Dst2010ToD0ToKp...  FATAL  Exception with tag= is caught 
+Dst2010ToD0ToKp...  ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+ChronoStatSvc        INFO  Number of skipped events for MemStat-1
+DaVinciUserSequ...  FATAL  Exception with tag= is caught 
+DaVinciUserSequ...  ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+DaVinciAnalysisSeq  FATAL  Exception with tag= is caught 
+DaVinciAnalysisSeq  ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+FilteredEventSeq    FATAL  Exception with tag= is caught 
+FilteredEventSeq    ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+DaVinciEventSeq     FATAL  Exception with tag= is caught 
+DaVinciEventSeq     ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+EventLoopMgr        FATAL .executeEvent(): Exception with tag= thrown by DaVinciEventSeq
+EventLoopMgr        ERROR 	Dst2010ToD0ToKpipiTuple:: tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple'	 StatusCode=FAILURE
+EventLoopMgr      WARNING Execution of algorithm DaVinciEventSeq failed
+EventLoopMgr        ERROR Error processing event loop.
+EventLoopMgr        ERROR Terminating event processing loop due to errors
+EventLoopMgr        ERROR Terminating event processing loop due to errors
+ApplicationMgr       INFO Application Manager Stopped successfully
+AllStreams_PsAn...SUCCESS Number of counters : 8
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | "# Unpacked FlavourTags"                        |         1 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | "# Unpacked MuonPIDs"                           |        90 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | "# Unpacked Particles"                          |         1 |         63 |     63.000 |     0.0000 |      63.000 |      63.000 |
+ | "# Unpacked ProtoParticles"                     |        90 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | "# Unpacked RecVertices"                        |         1 |          1 |     1.0000 |     0.0000 |      1.0000 |      1.0000 |
+ | "# Unpacked RichPIDs"                           |        90 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | "# Unpacked Tracks"                             |        90 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | "# Unpacked Vertices"                           |         1 |         45 |     45.000 |     0.0000 |      45.000 |      45.000 |
+UnpackTrack       SUCCESS Number of counters : 1
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | "# Unpacked Tracks"                             |         1 |        172 |     172.00 |     0.0000 |      172.00 |      172.00 |
+DaVinciInitAlg    SUCCESS ==================================================================
+DaVinciInitAlg    SUCCESS 301 events processed
+DaVinciInitAlg    SUCCESS ==================================================================
+DaVinciInitAlg    WARNING Should have processed 1000 events
+DaVinciInitAlg    WARNING ==================================================================
+Dst2010ToD0ToKp...SUCCESS Booked 1 N-Tuples and 0 Event Tag Collections
+Dst2010ToD0ToKp...SUCCESS List of booked N-Tuples in directory "FILE1/Dst2010ToD0ToKpipiTuple"
+Dst2010ToD0ToKp...SUCCESS  ID=DecayTree     Title="DecayTree"                               #items=0  {}
+Dst2010ToD0ToKp...SUCCESS Number of counters : 4
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | "# AllStreams/Phys/D2hhPromptDst2D2RSLine"      |       301 |          1 |  0.0033223 |   0.057543 |      0.0000 |      1.0000 |
+ | "# input particles"                             |       301 |          1 |  0.0033223 |   0.057543 |      0.0000 |      1.0000 |
+ |*"#accept"                                       |       300 |          0 |(  0.00000 +- 0.333333 )%|   -------   |   -------   |
+ | "Event"                                         |       301 |        301 |     1.0000 |     0.0000 |      1.0000 |      1.0000 |
+Dst2010ToD0ToKp...SUCCESS Exceptions/Errors/Warnings/Infos Statistics : 1/0/0/0
+Dst2010ToD0ToKp...SUCCESS  #EXCEPTIONS = 1        Message = 'tool():: Could not retrieve Tool 'LoKi::Hybrid::TupleTool/DstLoKiTuple''
+EventLoopMgr         INFO Histograms converted successfully according to request.
+DataOnDemandSvc      INFO Handled "DataFault" incidents: 93/355/5645(Alg/Node/Total).
+RootCnvSvc           INFO Disconnected data IO:5634263D-83F0-E211-8A9B-003048CF4986 [root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/MC/2011/ALLSTREAMS.DST/00026429/0000/00026429_00000001_1.allstreams.dst]
+TransportSvc      SUCCESS  GEOMETRY ERRORS: 'Skip'     map has the size 0
+
+TransportSvc      SUCCESS  GEOMETRY ERRORS: 'Recover'  map has the size 0
+
+TransportSvc      SUCCESS  GEOMETRY ERRORS: 'Codes'    map has the size 0
+
+TransportSvc         INFO Reset the static pointer to DetDesc::IGeometyrErrorSvc
+ToolSvc              INFO Removing all tools created by ToolSvc
+DaVinciInitAlg....SUCCESS Booked 4 Histogram(s) : 1D=4 
+DaVinciInitAlg....SUCCESS Number of counters : 2
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | "Delta Memory/MB"                               |       291 |      2.308 |  0.0079313 |    0.12623 |      0.0000 |      2.1520 |
+ | "Total Memory/MB"                               |       301 |   425322.7 |     1413.0 |    0.48128 |      1410.9 |      1413.2 |
+ToolSvc.TrackSt...SUCCESS Number of counters : 1
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | "Number of tracks seen"                         |         1 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ToolSvc.HybridF...SUCCESS Exceptions/Errors/Warnings/Infos Statistics : 0/3/0/0
+ToolSvc.HybridF...SUCCESS  #ERRORS     = 1        Message = ' Error has occured in Python '
+ToolSvc.HybridF...SUCCESS  #ERRORS     = 1        Message = 'Error from LoKi::Hybrid::Base::executeCode'
+ToolSvc.HybridF...SUCCESS  #ERRORS     = 1        Message = 'Invalid object for the code 'DTF_FUN(CHILDFUN(BPVIPCHI2(), 1), False, 'D0')''
+TimingAuditor.T...   INFO ----------------------------------------------------------------------------------------------------------------------
+TimingAuditor.T...   INFO This machine has a speed about   2.40 times the speed of a 2.8 GHz Xeon.
+TimingAuditor.T...   INFO Algorithm                              (millisec) |    <user> |   <clock> |      min       max | entries | total (s) |
+TimingAuditor.T...   INFO ----------------------------------------------------------------------------------------------------------------------
+TimingAuditor.T...   INFO EVENT LOOP                                        |    68.309 |    71.999 |    0.460   21269.5 |     301 |    21.672 |
+TimingAuditor.T...   INFO  DaVinciEventSeq                                  |    68.289 |    71.967 |    0.447   21267.1 |     301 |    21.662 |
+TimingAuditor.T...   INFO   DaVinciInitAlg                                  |     0.073 |     0.074 |    0.037       2.2 |     301 |     0.022 |
+TimingAuditor.T...   INFO   FilteredEventSeq                                |    68.189 |    71.882 |    0.388   21267.0 |     301 |    21.636 |
+TimingAuditor.T...   INFO    DaVinciEventInitSeq                            |     0.003 |     0.006 |    0.003       0.0 |     301 |     0.002 |
+TimingAuditor.T...   INFO     PhysInitSeq                                   |     0.000 |     0.002 |    0.000       0.0 |     301 |     0.000 |
+TimingAuditor.T...   INFO     AnalysisInitSeq                               |     0.000 |     0.001 |    0.000       0.0 |     301 |     0.000 |
+TimingAuditor.T...   INFO    DaVinciAnalysisSeq                             |    68.176 |    71.872 |    0.383   21266.8 |     301 |    21.633 |
+TimingAuditor.T...   INFO     DaVinciUserSequence                           |    68.176 |    71.866 |    0.380   21266.7 |     301 |    21.632 |
+TimingAuditor.T...   INFO      Dst2010ToD0ToKpipiTuple                      |    66.820 |    70.289 |    0.002   21155.7 |     301 |    21.157 |
+TimingAuditor.T...   INFO     MonitoringSequence                            |     0.000 |     0.002 |    0.000       0.0 |     300 |     0.000 |
+TimingAuditor.T...   INFO   LumiSeq                                         |     0.013 |     0.004 |    0.002       0.0 |     300 |     0.001 |
+TimingAuditor.T...   INFO    EventAccount                                   |     0.000 |     0.002 |    0.000       0.0 |     300 |     0.000 |
+TimingAuditor.T...   INFO *     AllStreams_PsAndVsUnpack                    |     0.889 |     2.080 |    0.056      89.3 |      90 |     0.187 |
+TimingAuditor.T...   INFO *       UnpackTrack                               |    31.995 |    60.546 |   60.546      60.5 |       1 |     0.061 |
+TimingAuditor.T...   INFO *       AllStreams_pRec_Vertex_Primary_Converter  |     0.000 |     0.222 |    0.222       0.2 |       1 |     0.000 |
+TimingAuditor.T...   INFO *      createODIN                                 |     6.999 |    23.839 |   23.839      23.8 |       1 |     0.024 |
+TimingAuditor.T...   INFO ----------------------------------------------------------------------------------------------------------------------
+RNTupleCnv        WARNING empty ntuple: /NTUPLES/FILE1/Dst2010ToD0ToKpipiTuple/DecayTree
+RCWNTupleCnv         INFO Booked TTree with ID: DecayTree "DecayTree" in directory DVTuples.root:/Dst2010ToD0ToKpipiTuple
+NTupleSvc            INFO NTuples saved successfully
+*****Chrono*****     INFO ****************************************************************************************************
+*****Chrono*****     INFO  The Final CPU consumption ( Chrono ) Table (ordered)
+*****Chrono*****     INFO ****************************************************************************************************
+ChronoStatSvc        INFO Time User   : Tot=   87 [ms]                                             #=  1
+*****Chrono*****     INFO ****************************************************************************************************
+******Stat******     INFO ****************************************************************************************************
+******Stat******     INFO  The Final stat Table (ordered)
+******Stat******     INFO ****************************************************************************************************
+******Stat******     INFO      Counter     |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+******Stat******     INFO  ""              |         0 |          0 |     0.0000 |     0.0000 | 1.7977e+308 |-1.7977e+308 |
+******Stat******     INFO ****************************************************************************************************
+ChronoStatSvc.f...   INFO  Service finalized successfully 
+ApplicationMgr       INFO Application Manager Finalized successfully
+ApplicationMgr      ERROR Application Manager Terminated with error code 6
+GaudiTool       WARNING   Initialize/Finalize (mis)balance 'LoKi::Hybrid::TupleTool/Dst2010ToD0ToKpipiTuple.Dst.DstLoKiTuple' Counts = 1
