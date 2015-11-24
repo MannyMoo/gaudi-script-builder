@@ -29,17 +29,18 @@ def get_bk_path(bkpath) :
     return bkpath
 
 class BKDataGetter(object) :
-    __slots__ = ('bkpath',)
+    __slots__ = ('bkpath', 'dqflag')
 
-    def __init__(self, bkpath) :
+    def __init__(self, bkpath, dqflag = 'OK') :
         self.bkpath = get_bk_path(bkpath)
+        self.dqflag = dqflag
 
     def get_file_name(self) :
         '''Convert a bookkeeping path to a .py file name.'''
         return self.bkpath[1:].replace('/', '_').replace(' ', '_') + '.py'
 
     def get_data_set(self) :
-        data = BKQuery(type = 'Path', path = self.bkpath).getDataset()
+        data = BKQuery(type = 'Path', path = self.bkpath, dqflag = self.dqflag).getDataset()
         if not data :
             print 'Failed to retrieve data using path', self.bkpath
             return None
