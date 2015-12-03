@@ -294,7 +294,7 @@ class Script(object) :
         lines = []
         for obj in self.objs :
             imports.update(get_all_import_lines(obj))
-            lines.append(objline = obj.get_configuration_lines())
+            lines.append(obj.get_configuration_lines())
         for key, obj in self.namedObjs.iteritems() :
             imports.update(get_all_import_lines(obj))
             lines.append(obj.get_configuration_lines())
@@ -355,6 +355,12 @@ class DaVinciScript(Script) :
             dv.UserAlgorithms.append(TrackScaleState())
 
         isTrigger = is_trigger(version)
+        if isTrigger :
+            if not linename in HLT2List :
+                HLT2List.append(linename)
+        else :
+            if not linename in strippingList :
+                strippingList.append(linename)
         for trigList in L0List, HLT1List, HLT2List, strippingList :
             for i, trig in enumerate(trigList) :
                 if trig[-8:] != 'Decision' :
@@ -369,23 +375,23 @@ class DaVinciScript(Script) :
             dtt.Inputs = [inputLocation]
             for tool in toolList :
                 dtt.addTupleTool(tool)
+            if not isTrigger :
+                ttstrip = dtt.addTupleTool('TupleToolStripping')
+                ttstrip.TriggerList = [linename + 'Decision'] + strippingList
+                ttstrip.VerboseStripping = True
             if dv.getProp('Simulation') :
                 for tool in mcToolList :
                     dtt.addTupleTool(tool)
+
             dtt.addBranches({'lab0' : desc})
-            if not isTrigger :
-                ttstrip = dtt.lab0.addTupleTool('TupleToolStripping')
-                ttstrip.TriggerList = [linename + 'Decision'] + strippingList
-                ttstrip.VerboseStripping = True
-            else :
-                HLT2List.append(linename + 'Decision')
-            if L0List or HLT1List or HLT2List :
+            if L0List or HLT1List or HLT2List or strippingList :
                 ttrig = dtt.lab0.addTupleTool('TupleToolTISTOS')
-                ttrig.TriggerList = L0List + HLT1List + HLT2List
+                ttrig.TriggerList = L0List + HLT1List + HLT2List + strippingList
                 ttrig.Verbose = True
                 ttrig.VerboseL0 = True
                 ttrig.VerboseHlt1 = True
                 ttrig.VerboseHlt2 = True
+                ttrig.VerboseStripping = True
             dv.UserAlgorithms.append(dtt)
 
         objs = []
