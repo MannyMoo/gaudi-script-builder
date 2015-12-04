@@ -231,6 +231,7 @@ print '***'
 
 def is_trigger(version) :
     return isinstance(version, int) or '0x' in version
+
 def get_line_opts(dataopts, version, linename) :
     isTrigger = is_trigger(version)
     opts = dataopts 
@@ -325,7 +326,8 @@ class DaVinciScript(Script) :
                  L0List = [],
                  HLT1List = [],
                  HLT2List = [],
-                 strippingList = []) :
+                 strippingList = [],
+                 headBranchName = 'lab0') :
         from Configurables import GaudiSequencer, DaVinci, TupleToolStripping, \
             TupleToolTrigger
     
@@ -375,17 +377,29 @@ class DaVinciScript(Script) :
             dtt.Inputs = [inputLocation]
             for tool in toolList :
                 dtt.addTupleTool(tool)
+
+            dtt.addBranches({headBranchName : desc})
+            headBranch = getattr(dtt, headBranchName)
+
             if not isTrigger :
                 ttstrip = dtt.addTupleTool('TupleToolStripping')
                 ttstrip.TriggerList = [linename + 'Decision'] + strippingList
                 ttstrip.VerboseStripping = True
+                
+                # This doesn't currently work. There doesn't seem to be an easy way
+                # to TISTOS stripping lines currently, which is infuriating. Surely everyone
+                # needs to do this for MC studies? It might be possible to do it using 
+                # TESTisTos in a Bender algorithm.
+                #ttstriptistos = headBranch.addTupleTool('TupleToolTISTOS/tistos_stripping')
+                #ttstriptistos.TriggerTisTosName = 'TESTisTos'
+                #ttstriptistos.TriggerList = [os.path.join(rootInTES, inputLocation)]
+
             if dv.getProp('Simulation') :
                 for tool in mcToolList :
                     dtt.addTupleTool(tool)
 
-            dtt.addBranches({'lab0' : desc})
             if L0List or HLT1List or HLT2List or strippingList :
-                ttrig = dtt.lab0.addTupleTool('TupleToolTISTOS')
+                ttrig = headBranch.addTupleTool('TupleToolTISTOS')
                 ttrig.TriggerList = L0List + HLT1List + HLT2List + strippingList
                 ttrig.Verbose = True
                 ttrig.VerboseL0 = True
