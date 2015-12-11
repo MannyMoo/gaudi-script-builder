@@ -389,7 +389,7 @@ class DaVinciScript(Script) :
                 # This doesn't currently work. There doesn't seem to be an easy way
                 # to TISTOS stripping lines currently, which is infuriating. Surely everyone
                 # needs to do this for MC studies? It might be possible to do it using 
-                # TESTisTos in a Bender algorithm.
+                # TESTisTos in a Bender algorithm, or INTES functor.
                 #ttstriptistos = headBranch.addTupleTool('TupleToolTISTOS/tistos_stripping')
                 #ttstriptistos.TriggerTisTosName = 'TESTisTos'
                 #ttstriptistos.TriggerList = [os.path.join(rootInTES, inputLocation)]
@@ -400,12 +400,13 @@ class DaVinciScript(Script) :
 
             if L0List or HLT1List or HLT2List or strippingList :
                 ttrig = headBranch.addTupleTool('TupleToolTISTOS')
-                ttrig.TriggerList = L0List + HLT1List + HLT2List + strippingList
+                # TupleToolTISTOS can't do stripping this way either.
+                ttrig.TriggerList = L0List + HLT1List + HLT2List # + strippingList
                 ttrig.Verbose = True
                 ttrig.VerboseL0 = True
                 ttrig.VerboseHlt1 = True
                 ttrig.VerboseHlt2 = True
-                ttrig.VerboseStripping = True
+                #ttrig.VerboseStripping = True
             dv.UserAlgorithms.append(dtt)
 
         objs = []
