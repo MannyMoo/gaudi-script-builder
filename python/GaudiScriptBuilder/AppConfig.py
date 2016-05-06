@@ -409,9 +409,20 @@ class DaVinciScript(Script) :
                 #ttrig.VerboseStripping = True
             dv.UserAlgorithms.append(dtt)
 
+        if isTrigger :
+            from Configurables import DstConf
+            DstConf().Turbo = True
+            for dtt in dtts :
+                dtt.WriteP2PVRelations = False
+                # Not sure if this is necessary since RootInTES will be set for turbo data.
+                #dtt.InputPrimaryVertices = '/Event/Turbo/Primary'
+
         objs = []
         if locals().has_key('CondDB') :
             objs.append(CondDB())
+        if locals().has_key('DstConf') :
+            objs.append(DstConf())
+
         objsdict = {'dv' : dv}
 
         Script.__init__(self, fname, objs, objsdict)
