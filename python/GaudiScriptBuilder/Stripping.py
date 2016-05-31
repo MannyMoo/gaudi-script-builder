@@ -124,7 +124,7 @@ class StrippingLineConfig(LineConfigBase) :
         the next combined particle (something like Upsilon -> D0 D0bar), but it works with most.'''
 
         for comb in filter(lambda x : isinstance(x, CombineParticles), self.expandedMembers) :
-            if comb.DecayDescriptor :
+            if hasattr(comb, 'DecayDescriptor') and comb.DecayDescriptor :
                 head, strippeddesc = head_descriptor(comb.DecayDescriptor)
                 if descs.has_key(head) :
                     descs[head].append(comb.DecayDescriptor)
@@ -132,11 +132,11 @@ class StrippingLineConfig(LineConfigBase) :
                     descs[head] = [comb.DecayDescriptor]
             else :
                 for desc in comb.DecayDescriptors :
-                    head, strippeddesc = head_descriptor(comb.DecayDescriptor)
+                    head, strippeddesc = head_descriptor(desc)
                     if descs.has_key(head) :
                         descs[head].append(desc)
                     else :
-                        descs[head] = desc
+                        descs[head] = [desc]
         return descs
 
     def line_name(self) :

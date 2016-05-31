@@ -5,6 +5,7 @@ from DecayTreeTuple.Configuration import *
 import Configurables
 import subprocess
 from GaudiScriptBuilder.DecayDescriptors import *
+import EnvUtils 
 
 def get_all_configurables(obj, recursive = True, top = True) :
     configurables = set()
@@ -263,7 +264,7 @@ print repr({'rootInTES' : rootInTES, 'inputLocation' : inputLocation, 'decayDesc
         if isTrigger :
             args.append('Moore')
         else :
-            args.append('DaVinci')
+            args += ['DaVinci', EnvUtils.get_stripping_dv_version(version)]
         args += ['python', '-c', opts]
         proc = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         proc.wait()
@@ -275,6 +276,7 @@ print repr({'rootInTES' : rootInTES, 'inputLocation' : inputLocation, 'decayDesc
             iStart = stdoutLines.index('***\n')
             return eval(stdoutLines[iStart+1])
         except :
+            print args
             print 'stdout:'
             print ''.join(stdoutLines)
             print
