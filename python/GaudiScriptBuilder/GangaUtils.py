@@ -12,7 +12,7 @@ and try again.''')
 sys.path.insert(0, os.path.normpath('{gangaSys}{sep}..{sep}install{sep}ganga{sep}python'\
                                         .format(gangaSys=os.environ['GANGASYSROOT'], sep = os.sep)))
 
-from Ganga.GPI import BKQuery
+from Ganga.GPI import BKQuery, LocalFile, export
 
 def get_bk_path(bkpath) :
     '''Remove the sim+std:/ or evt+std:/ prefix from a bookkeeping path, if it's there. 
@@ -46,7 +46,8 @@ class BKDataGetter(object) :
             return None
         return data
 
-    def save_data_file(self, destDir = '.', fname = None) :
+    def save_data_file(self, destDir = '.', fname = None, savecatalog = True,
+                       saveganga = True) :
         data = self.get_data_set()
         if not data :
             return None
@@ -54,6 +55,24 @@ class BKDataGetter(object) :
             fname = os.path.join(destDir, self.get_file_name())
         else :
             fname = os.path.join(destDir, fname)
-        with open(fname, 'w') as f :
+
+        if not '$' in fname :
+            fname = os.path.abspath(fname)
+            expandedfname = fname
+        else :
+            expandedfname = os.path.abspath(os.path.expandvars(fname))
+
+        if savecatalog :
+            catalogname = fname + '.xml'
+            expandedcatalogname = expandedfname + '.xml'
+            with open(expandedcatalogname, 'w') as f :
+                f.write(data.getCatalog())
+            data.XMLCatalogueSlice = LocalFile(namePattern = catalogname)
+        if saveganga :
+            export(data, expandedfname + '.ganga')
+
+        with open(expandedfname, 'w') as f :
             f.write(data.optionsString())
+            if savecatalog :
+                f.write('\nfrom Gaudi.Configuration import FileCatalog\nFileCatalog().Catalogs += [{0!r}]\n'.format('xmlcatalog_file:' + catalogname))
         return fname
