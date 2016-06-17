@@ -12,7 +12,7 @@ def main() :
     args = argparser.parse_args()
 
     if ',' in args.paths :
-        paths = eval(paths)
+        paths = eval(args.paths)
     else :
         paths = (args.paths,)
     
