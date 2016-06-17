@@ -6,6 +6,12 @@ import Configurables
 import subprocess
 from GaudiScriptBuilder.DecayDescriptors import *
 import EnvUtils 
+from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, FilterDesktop, GaudiSequencer
+from PhysSelPython.Wrappers import Selection
+import StandardParticles
+
+def is_trigger(version) :
+    return isinstance(version, int) or '0x' in version
 
 def get_all_configurables(obj, recursive = True, top = True) :
     configurables = set()
@@ -31,13 +37,56 @@ def get_all_import_lines(obj) :
         importLines.add(conf.get_import_line())
     return importLines
 
+mcbasicinputs = {'K+' : StandardParticles.StdAllNoPIDsKaons,
+                 'pi+' : StandardParticles.StdAllNoPIDsPions,
+                 'mu-' : StandardParticles.StdAllNoPIDsMuons,
+                 'p+' : StandardParticles.StdAllNoPIDsProtons,
+                 'e-' : StandardParticles.StdAllNoPIDsElectrons}
+
+def build_mc_unbiased_selection(decayDesc, arrow = '==>') :
+    preamble = [ "from LoKiPhysMC.decorators import *" , "from LoKiPhysMC.functions import mcMatch" ]
+    decayDesc.set_carets(False)
+    decayDescCC = decayDesc.copy()
+    decayDescCC.cc = True
+    if not decayDesc.daughters :
+        if decayDesc.particle.name in mcbasicinputs :
+            inputsel = mcbasicinputs[decayDesc.particle.name]
+        else :
+            conj = decayDesc.conjugate()
+            if conj.particle.name in mcbasicinputs :
+                inputsel = mcbasicoutputs[conj.particle.name]
+            else :
+                raise ValueError("Can't find MC basic input for particle " + repr(decayDesc.particle.name))
+        return Selection(decayDesc.get_full_alias() + '_MCSel',
+                         Algorithm = FilterDesktop('mcMatch({0!r})'.format(decayDescCC.to_string(arrow))),
+                         RequiredSelections = [inputsel],
+                         Preambulo = preamble)
+    inputs = []
+    daughtercuts = {}
+    for daughter in decayDesc.daughters :
+        sel = build_mc_unbiased_seq(daughter, arrow)
+        inputs.append(sel)
+        daughter.caret = True
+        daughtercuts[daughter.particle.name] = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
+        daughter.caret = False
+    comb = CombineParticles(decayDesc.get_full_alias() + '_MCComb',
+                            DecayDescriptor = str(decayDesc),
+                            MotherCut = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow)),
+                            Preambulo = preamble,
+                            DaughtersCuts = daughtercuts)
+    sel = Selection(decayDesc.get_full_alias() + '_MCSel',
+                    Algoritm = comb,
+                    RequiredSelections = inputs)
+    return sel
+
 def duck_punch_configurable() :
     def get_user_defined_properties(self) :
         #return self.getValuedProperties()
         props = self.properties()
         defaultProps = self.getDefaultProperties()
         return dict((attr, val) for attr, val in props.iteritems() \
-                        if val != '<no value>' and val != defaultProps[attr])
+                        if not (val == '<no value>' or val == defaultProps[attr]
+                                or repr(val) == repr(defaultProps[attr])))
 
     def get_import_line(self) :
         if hasattr(Configurables, self.__class__.__name__) :
@@ -150,17 +199,14 @@ def duck_punch_configurable() :
     Configurable._reprTop = True
     Configurable._reprFull = False
 
-    def dtt_get_import_line(self) :
-        return 'from DecayTreeTuple.Configuration import *\n'
-
-    specialImports = {DecayTreeTuple : dtt_get_import_line}
-    
-    for cls, func in specialImports.iteritems() :
-        cls.get_import_line = func
-
+def duck_punch_dtt() :
     # Special implementations for DecayTreeTuple
 
-    def dtt_get_configurables(self, recursive = True, top = True) :
+    def get_import_line(self) :
+        return 'from DecayTreeTuple.Configuration import *\n'
+
+
+    def get_configurables(self, recursive = True, top = True) :
         confs = Configurable.get_configurables(self, recursive, top)
         # Exclude TupleToolDecay instances that represent branches
         # - they're treated separately.
@@ -169,14 +215,14 @@ def duck_punch_configurable() :
             confs = filter(lambda conf : conf.get_own_name() not in branchNames, confs)
         return confs
     
-    def dtt_get_tools_to_add(self) :
+    def get_tools_to_add(self) :
         tools = self.getTools()
         if hasattr(self, 'Branches') :
             branchNames = self.Branches.keys()
             tools = filter(lambda tool : tool.get_own_name() not in branchNames, tools)
         return tools
 
-    def dtt_get_own_configuration_lines(self, ownVarName = None) :
+    def get_own_configuration_lines(self, ownVarName = None) :
         lines = Configurable.get_own_configuration_lines(self, ownVarName)
         # Extra bits to configure branches.
         if hasattr(self, 'Branches') :
@@ -189,100 +235,311 @@ def duck_punch_configurable() :
 
         return lines
 
-    def dtt_get_constructor_args(self) :
+    def get_constructor_args(self) :
         props = Configurable.get_constructor_args(self)
         if props.has_key('Branches') :
             del props['Branches']
         return props
 
-    DecayTreeTuple.get_configurables = dtt_get_configurables
-    DecayTreeTuple.get_tools_to_add = dtt_get_tools_to_add
-    DecayTreeTuple.get_own_configuration_lines = dtt_get_own_configuration_lines
-    DecayTreeTuple.get_constructor_args = dtt_get_constructor_args
+    def configure_tools(self, toolList = ["TupleToolPropertime",
+                                          "TupleToolKinematic",
+                                          "TupleToolGeometry",
+                                          "TupleToolEventInfo",
+                                          "TupleToolPrimaries",
+                                          "TupleToolPid",
+                                          "TupleToolANNPID",
+                                          "TupleToolTrackInfo",
+                                          "TupleToolRecoStats",],
+                        mcToolList = ['TupleToolMCTruth',
+                                      'TupleToolMCBackgroundInfo'],
+                        L0List = [],
+                        HLT1List = [],
+                        HLT2List = [],
+                        strippingList = [],
+                        headBranch = None) :
 
+        for trigList in L0List, HLT1List, HLT2List, strippingList :
+            for i, trig in enumerate(trigList) :
+                if trig[-8:] != 'Decision' :
+                    trigList[i] += 'Decision'
+
+        for tool in toolList + mcToolList :
+            self.addTupleTool(tool)
+
+        if strippingList :
+            ttstrip = self.addTupleTool('TupleToolStripping')
+            ttstrip.TriggerList = strippingList
+            ttstrip.VerboseStripping = True
+            
+            # This doesn't currently work. There doesn't seem to be an easy way
+            # to TISTOS stripping lines currently, which is infuriating. Surely everyone
+            # needs to do this for MC studies? It might be possible to do it using 
+            # TESTisTos in a Bender algorithm, or INTES functor.
+            #ttstriptistos = headBranch.addTupleTool('TupleToolTISTOS/tistos_stripping')
+            #ttstriptistos.TriggerTisTosName = 'TESTisTos'
+            #ttstriptistos.TriggerList = [os.path.join(rootInTES, inputLocation)]
+
+        if L0List or HLT1List or HLT2List :
+            if headBranch == None :
+                headBranch = self
+            ttrig = headBranch.addTupleTool('TupleToolTISTOS')
+            # TupleToolTISTOS can't do stripping this way either.
+            ttrig.TriggerList = L0List + HLT1List + HLT2List 
+            ttrig.Verbose = True
+            ttrig.VerboseL0 = True
+            ttrig.VerboseHlt1 = True
+            ttrig.VerboseHlt2 = True
+
+    def configure_for_line(self, decaydesc, inputloc, linename, version,
+                           simulation,
+                           toolList = ["TupleToolPropertime",
+                                       "TupleToolKinematic",
+                                       "TupleToolGeometry",
+                                       "TupleToolEventInfo",
+                                       "TupleToolPrimaries",
+                                       "TupleToolPid",
+                                       "TupleToolANNPID",
+                                       "TupleToolTrackInfo",
+                                       "TupleToolRecoStats",],
+                           mcToolList = ['TupleToolMCTruth',
+                                         'TupleToolMCBackgroundInfo'],
+                           L0List = [],
+                           HLT1List = [],
+                           HLT2List = [],
+                           strippingList = []) :
+
+        
+        
+        self.Decay = decaydesc.to_string(carets = True)
+        self.Inputs = [inputloc]
+        isTrigger = is_trigger(version)
+        if isTrigger :
+            self.WriteP2PVRelations = False
+            # Not sure if this is necessary since RootInTES will be set for turbo data.
+            #self.InputPrimaryVertices = '/Event/Turbo/Primary'
+            if not linename in HLT2List :
+                HLT2List.append(linename)
+        else :
+            if not linename in strippingList :
+                strippingList.append(linename)
+
+        self.addBranches(decaydesc.branches())
+        headBranch = getattr(self, decaydesc.get_alias())
+
+        self.configure_tools(toolList = toolList,
+                             mcToolList = mcToolList,
+                             L0List = L0List,
+                             HLT1List = HLT1List,
+                             HLT2List = HLT2List,
+                             strippingList = strippingList,
+                             headBranch = headBranch)
+
+    for name, val in locals().iteritems() :
+        setattr(DecayTreeTuple, name, val)
+
+            
 duck_punch_configurable()
+duck_punch_dtt()
 
-def get_data_opts(datafile, explicitTags = False) :
-    dataopts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
+def duck_punch_davinci() :
+    
+    def configure_data_opts(self, datafile, explicitTags = False) :
+        #         benderenv = EnvUtils.get_lhcb_env('Bender')
+        #         opts = '''from BenderTools.Parser import dataType
+        # from Bender.DataUtils import evtSelInput
+        # from BenderTools.GetDBtags import useDBTagsFromData
+        # from Configurables import DaVinci
+        # ifiles = evtSelInput ( {datafile!r} )
+        # DataType, Simulation, ext = dataType ( ifiles )
+        # dv = DaVinci()
+        # tags = useDBTagsFromData(ifiles, False, True, dv)
+        # CondDBtag = dv.CondDBtag
+        # DDDBtag = dv.DDDBtag
+        # '''
+        diracenv = EnvUtils.get_lhcb_env('LHCbDirac')
+        opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
 lfns = LFNSet(get_lfns_from_bk_file({datafile!r})[0])
-print '***'
-print lfns.get_app_config_opts({explicitTags!r})
-print '***'
-'''.format(**locals())
-    args = ['lb-run', 'LHCbDirac', 'python', '-c', dataopts]
-    proc = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-    proc.wait()
-    stdoutLines = proc.stdout.readlines()
-    stderrLines = proc.stderr.read()
-    proc.stdout.close()
-    proc.stderr.close()
-    #print stdoutLines
-    try :
-        startLine = stdoutLines.index('***\n')+1
-        endLine = startLine + stdoutLines[startLine:].index('***\n')
-        return ''.join(stdoutLines[startLine:endLine])
-    except :
-        print 'stdout:'
-        print ''.join(stdoutLines)
-        print 
-        print 'stderr:'
-        print stderrLines
-        raise
+InputType = lfns.get_input_type()
+Simulation, DataType = lfns.get_data_type()
+'''.format(datafile = datafile)
+        attrs = 'InputType', 'Simulation', 'DataType'
+        returnvals = diracenv.eval_python(opts, attrs, raiseerror = True)
 
-def is_trigger(version) :
-    return isinstance(version, int) or '0x' in version
+        conddb = CondDB()
+        if returnvals['objects']['Simulation'] or explicitTags :
+            opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
-def get_line_opts(dataopts, version, linename) :
-    isTrigger = is_trigger(version)
-    opts = dataopts 
-    opts += '''version = {0!r}
+lfns = LFNSet(get_lfns_from_bk_file({datafile!r}, 1)[0])
+tags = lfns.get_tags()
+if 'SIMCOND' in tags :
+    CondDBtag = tags['SIMCOND']
+else :
+    CondDBtag = tags['LHCBCOND']
+DDDBtag = tags['DDDB']
+'''.format(datafile = datafile)
+            tagvals = diracenv.eval_python(opts, ('CondDBtag', 'DDDBtag'), raiseerror = True)
+            returnvals['objects'].update(tagvals['objects'])
+        else :
+            conddb.LatestGlobalTagByDataType = returnvals['objects']['DataType']
+        
+        for attr, val in returnvals['objects'].iteritems() :
+            if hasattr(self.__class__, attr) :
+                setattr(self, attr, val)
+        self.extraobjs.add(conddb)
+
+    def get_line_settings(self, linename, version) :
+        isTrigger = is_trigger(version)
+        opts = '''version = {0!r}
 linename = {1!r}
 '''.format(version, linename)
-
-    if isTrigger :
-        opts += '''from GaudiScriptBuilder.Trigger import TriggerConfig
+        
+        if isTrigger :
+            opts += '''from GaudiScriptBuilder.Trigger import TriggerConfig
 config = TriggerConfig(version) 
 '''
-    else :
-        opts += '''from GaudiScriptBuilder.Stripping import StrippingConfig
+        else :
+            opts += '''from GaudiScriptBuilder.Stripping import StrippingConfig
 config = StrippingConfig(version)
 '''
-    opts += '''line = config.find_lines(linename)[0]
-rootInTES, inputLocation = line.root_in_tes_and_output_location((inputType == 'MDST'),
-                                                                app.Simulation)
+        opts += '''line = config.find_lines(linename)[0]
+rootInTES, inputLocation = line.root_in_tes_and_output_location({0!r},
+                                                                {1!r})
 decayDescs = line.full_decay_descriptors()
-'''
-    try :
-        exec opts
-        return {'rootInTES' : rootInTES, 'inputLocation' : inputLocation, 'decayDescs' : decayDescs}
-    except :
-        opts += '''print '***'
-print repr({'rootInTES' : rootInTES, 'inputLocation' : inputLocation, 'decayDescs' : decayDescs})
-'''
-        args = ['lb-run']
+'''.format(self.getProp('InputType') == 'MDST',
+           self.getProp('Simulation'))
+
         if isTrigger :
-            args.append('Moore')
+            env = EnvUtils.get_lhcb_env('Moore')
         else :
-            args += ['DaVinci', EnvUtils.get_stripping_dv_version(version)]
-        args += ['python', '-c', opts]
-        proc = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-        proc.wait()
-        stdoutLines = proc.stdout.readlines()
-        stderrLines = proc.stderr.read()
-        proc.stdout.close()
-        proc.stderr.close()
-        try :
-            iStart = stdoutLines.index('***\n')
-            return eval(stdoutLines[iStart+1])
-        except :
-            print args
-            print 'stdout:'
-            print ''.join(stdoutLines)
-            print
-            print 'stderr:'
-            print stderrLines
-            raise
+            env = EnvUtils.get_stripping_env(version)
+
+        returnVals = env.eval_python(opts, ('rootInTES', 'inputLocation', 'decayDescs'),
+                                     raiseerror = True)
+
+        self.RootInTES = returnVals['objects']['rootInTES']
+        if isTrigger :
+            from Configurables import DstConf
+            dstconf = DstConf()
+            dstconf.Turbo = True
+            self.extraobjs.add(dstconf)
+        objs = returnVals['objects']
+        objs['decayDescs'] = list(objs['decayDescs'])
+        objs['linename'] = linename
+        objs['version'] = version
+        for i, desc in enumerate(objs['decayDescs']) :
+            objs['decayDescs'][i] = parse_decay_descriptor(desc)
+        return objs
+
+    def add_line_tuple_sequence(self, linesettings,
+                                toolList = ["TupleToolPropertime",
+                                            "TupleToolKinematic",
+                                            "TupleToolGeometry",
+                                            "TupleToolEventInfo",
+                                            "TupleToolPrimaries",
+                                            "TupleToolPid",
+                                            "TupleToolANNPID",
+                                            "TupleToolTrackInfo",
+                                            "TupleToolRecoStats",],
+                                mcToolList = ['TupleToolMCTruth',
+                                              'TupleToolMCBackgroundInfo'],
+                                L0List = [],
+                                HLT1List = [],
+                                HLT2List = [],
+                                strippingList = [],
+                                aliases = {},
+                                labXAliases = False,
+                                substitutions = {}) :
+        if not isinstance(linesettings, dict) :
+            linesettings = self.get_line_settings(*linesettings)
+        self.RootInTES = linesettings['rootInTES']
+        linename = linesettings['linename']
+        version = linesettings['version']
+        decayDescs = linesettings['decayDescs']
+        inputlocation = linesettings['inputLocation']
+        lineseq = GaudiSequencer(linename + '-Sequence')
+        if substitutions :
+            subs = {}
+            for i, desc in enumerate(decayDescs) :
+                descsubs, newdesc = desc.get_substitutions(substitutions)
+                subs.update(descsubs)
+                decayDescs[i] = newdesc
+            newinputlocation = inputlocation.split('/')
+            newinputlocation[-2] += '-SubPID'
+            newinputlocation = '/'.join(newinputlocation)
+            subpid = SubstitutePID(linename + '-SubPID',
+                                   Code = 'ALL', 
+                                   Substitutions = subs,
+                                   Inputs = [inputlocation],
+                                   Output = newinputlocation)
+            lineseq.Members += [subpid]
+            inputlocation = newinputlocation
+        for desc in decayDescs :
+            if labXAliases :
+                desc.set_labX_aliases()
+            elif aliases :
+                desc.set_aliases(aliases)
+            desctuple = DecayTreeTuple(desc.get_full_alias() + 'Tuple',
+                                       ToolList = [])
+            desctuple.configure_for_line(desc, inputlocation,
+                                         linename, version, 
+                                         self.getProp('Simulation'),
+                                         toolList, mcToolList, L0List, HLT1List, HLT2List,
+                                         strippingList)
+            lineseq.Members.append(desctuple)
+        self.UserAlgorithms.append(lineseq)
+        return linesettings, lineseq
+
+    def add_TrackScaleState(self, pos = 0) :
+        if not self.getProp('Simulation') :
+            from Configurables import TrackScaleState
+            self.UserAlgorithms.insert(pos, TrackScaleState(RootInTES = self.getProp('RootInTES')))
+
+    
+    def make_script(self, fname) :
+        return Script(fname, self.extraobjs, {'dv' : self})
+
+    def write_script(self, fname) :
+        self.make_script(fname).write()
+
+    def add_mc_unbiased_sequence(self, decayDesc, arrow = '==>',
+                                 toolList = ["TupleToolPropertime",
+                                             "TupleToolKinematic",
+                                             "TupleToolGeometry",
+                                             "TupleToolEventInfo",
+                                             "TupleToolPrimaries",
+                                             "TupleToolPid",
+                                             "TupleToolANNPID",
+                                             "TupleToolTrackInfo",
+                                             "TupleToolRecoStats",],
+                                 mcToolList = ['TupleToolMCTruth',
+                                               'TupleToolMCBackgroundInfo'],
+                                 L0List = [],
+                                 HLT1List = [],
+                                 HLT2List = [],
+                                 strippingList = []) :
+        seq = GaudiSequencer(decayDesc.get_full_alias() + '_MCSeq')
+        sel = build_mc_unbiased_selection(decayDesc, arrow)
+        seq.Members.append(sel)
+        dtt = DecayTreeTuple(decayDesc.get_full_alias() + '_MCTuple',
+                             Decay = str(decayDesc),
+                             Inputs = [sel])
+        dtt.configure_tools(toolList = toolList,
+                            mcToolList = mcToolList,
+                            L0List = L0List,
+                            HLT1List = HLT1List,
+                            HLT2List = HLT2List,
+                            strippingList = strippingList)
+        seq.Members.append(dtt)
+        return seq
+
+    extraobjs = set()
+
+    for name, val in locals().iteritems() :
+        setattr(DaVinci, name, val)
+
+
+duck_punch_davinci()
 
 class Script(object) :
     __slots__ = ('fname', 'objs', 'namedObjs') 
@@ -333,101 +590,27 @@ class DaVinciScript(Script) :
         from Configurables import GaudiSequencer, DaVinci, TupleToolStripping, \
             TupleToolTrigger
     
-        # Defines Simulation, CondDBtag, DDDBtag, inputType
-        dataopts = get_data_opts(datafile, explicitTags)
-        exec dataopts
-
-        # Defines rootInTES, inputLocation, and decayDescs
-        lineOpts = get_line_opts(dataopts, version, linename)
-        for key, val in lineOpts.iteritems() :
-            exec key + ' = ' + repr(val)
-
+        # Defines Simulation, CondDBtag, DDDBtag, InputType, DataType
         dv = DaVinci()
-        dv.InputType = inputType
-        dv.RootInTES = rootInTES
+        dv.configure_data_opts(datafile, explicitTags)
+
         dv.TupleFile = 'DVTuples.root'
         dv.HistogramFile = 'DVHistos.root'
         dv.Lumi = True
-        for attr, val in app.get_user_defined_properties().iteritems() :
-            setattr(dv, attr, val)
-        # Make sure DataType is set, in case it's the default value.
-        dv.DataType = app.DataType
 
         # Can't use TrackScaleState for 2015 data yet as it's not been calibrated.
-        if not app.Simulation and dv.DataType != '2015' and useTrackScaleState :
-            from Configurables import TrackScaleState
-            dv.UserAlgorithms.append(TrackScaleState())
+        if useTrackScaleState :
+            dv.add_TrackScaleState()
 
-        isTrigger = is_trigger(version)
-        if isTrigger :
-            if not linename in HLT2List :
-                HLT2List.append(linename)
-        else :
-            if not linename in strippingList :
-                strippingList.append(linename)
-        for trigList in L0List, HLT1List, HLT2List, strippingList :
-            for i, trig in enumerate(trigList) :
-                if trig[-8:] != 'Decision' :
-                    trigList[i] += 'Decision'
-
-        dtts = []
-        for desc in decayDescs :
-            dtt = DecayTreeTuple(descriptor_to_name(desc) + 'Tuple',
-                                 ToolList = [])
-            dtts.append(dtt)
-            dtt.Decay = add_carets(desc)
-            dtt.Inputs = [inputLocation]
-            for tool in toolList :
-                dtt.addTupleTool(tool)
-
-            dtt.addBranches({headBranchName : desc})
-            headBranch = getattr(dtt, headBranchName)
-
-            if not isTrigger :
-                ttstrip = dtt.addTupleTool('TupleToolStripping')
-                ttstrip.TriggerList = [linename + 'Decision'] + strippingList
-                ttstrip.VerboseStripping = True
-                
-                # This doesn't currently work. There doesn't seem to be an easy way
-                # to TISTOS stripping lines currently, which is infuriating. Surely everyone
-                # needs to do this for MC studies? It might be possible to do it using 
-                # TESTisTos in a Bender algorithm, or INTES functor.
-                #ttstriptistos = headBranch.addTupleTool('TupleToolTISTOS/tistos_stripping')
-                #ttstriptistos.TriggerTisTosName = 'TESTisTos'
-                #ttstriptistos.TriggerList = [os.path.join(rootInTES, inputLocation)]
-
-            if dv.getProp('Simulation') :
-                for tool in mcToolList :
-                    dtt.addTupleTool(tool)
-
-            if L0List or HLT1List or HLT2List or strippingList :
-                ttrig = headBranch.addTupleTool('TupleToolTISTOS')
-                # TupleToolTISTOS can't do stripping this way either.
-                ttrig.TriggerList = L0List + HLT1List + HLT2List # + strippingList
-                ttrig.Verbose = True
-                ttrig.VerboseL0 = True
-                ttrig.VerboseHlt1 = True
-                ttrig.VerboseHlt2 = True
-                #ttrig.VerboseStripping = True
-            dv.UserAlgorithms.append(dtt)
-
-        if isTrigger :
-            from Configurables import DstConf
-            DstConf().Turbo = True
-            for dtt in dtts :
-                dtt.WriteP2PVRelations = False
-                # Not sure if this is necessary since RootInTES will be set for turbo data.
-                #dtt.InputPrimaryVertices = '/Event/Turbo/Primary'
-
-        objs = []
-        if locals().has_key('CondDB') :
-            objs.append(CondDB())
-        if locals().has_key('DstConf') :
-            objs.append(DstConf())
+        # Defines rootInTES, inputLocation, and decayDescs
+        dv.add_line_tuple_sequence(linename, version, 
+                                   toolList, mcToolList,
+                                   L0List, HLT1List, HLT2List, strippingList,
+                                   headBranchName)
 
         objsdict = {'dv' : dv}
 
-        Script.__init__(self, fname, objs, objsdict)
+        Script.__init__(self, fname, dv.extraobjs, objsdict)
         
 if __name__ == '__main__' :
 

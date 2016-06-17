@@ -477,8 +477,12 @@ def make_fill_split_datafiles(fname, lfn1, *lfns) :
     lfns = get_run_info('FillNumber', lfn1, *lfns)
     return make_split_datafiles(fname, 'FillNumber', 'FillNumber', lfns)
 
-def get_lfns_from_bk_file(fname) :
+def get_lfns_from_bk_file(fname, nfiles = None) :
     lfns = []
+    if None != nfiles :
+        test = lambda : (len(lfns) < nfiles)
+    else :
+        test = lambda : True
     with open(fname) as f :
         for line in f :
             startNo = line.find('LFN:')
@@ -487,6 +491,8 @@ def get_lfns_from_bk_file(fname) :
             opener = line[startNo-1]
             line = line[startNo+4:]
             lfns.append(line[:line.find(opener)])
+            if not test() :
+                break
     return lfns
 
 def make_fill_split_datafiles_from_bk_file(fname) :

@@ -1,8 +1,8 @@
 '''Utilities to help manage the various environments required in the LHCb software.'''
 
-import subprocess, select, timeit, exceptions, pprint
+import subprocess, select, timeit, exceptions, pprint, tempfile, os
 
-strippingDVVersions = {'stripping21' : 'v36r1p3',
+strippingDVVersions = {'stripping21' : 'v36r2', # Should be 'v36r1p3' but it crashes when importing anything Stripping related.
                        'stripping20' : 'v32r2p1',
                        'stripping20r1' : 'v32r2p3'}
 
@@ -20,7 +20,7 @@ def get_stripping_dv_version(version) :
 
 class Shell(object) :
     __slots__ = ('args', 'process', 'stdoutpoller', 'stderrpoller', 'exitcodeline', 
-                 'exittest', 'getexitcode', 'initoutput')
+                 'exittest', 'getexitcode', 'initoutput', 'stdout', 'stderr')
     
     def __init__(self, args, exitcodeline, exittest, getexitcode, inittimeout = None, 
                  env = None) :
@@ -33,12 +33,14 @@ class Shell(object) :
         else :
             self.exittest = exittest
         self.getexitcode = getexitcode
-        self.process = subprocess.Popen(args, stdout = subprocess.PIPE, 
-                                        stderr = subprocess.PIPE, stdin = subprocess.PIPE, env = env)
+        self.process = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.PIPE, 
+                                        stdin = subprocess.PIPE, env = env, bufsize = -1)
+        self.stdout = self.process.stdout
+        self.stderr = self.process.stderr
         self.stdoutpoller = select.poll()
-        self.stdoutpoller.register(self.process.stdout.fileno(), select.POLLIN)
+        self.stdoutpoller.register(self.stdout.fileno(), select.POLLIN)
         self.stderrpoller = select.poll()
-        self.stderrpoller.register(self.process.stderr.fileno(), select.POLLIN)
+        self.stderrpoller.register(self.stderr.fileno(), select.POLLIN)
 
         # Ensure that any initial configuration of the environment is done before proceeding.
         self.initoutput = None
@@ -58,13 +60,13 @@ class Shell(object) :
         if not self.is_alive() :
             stdout = ''
             exitcode = None
-            for line in self.process.stdout :
+            for line in self.stdout :
                 stdout += line
                 if self.exittest(line) :
                     exitcode = self.getexitcode(line)
-            stderr = self.process.stderr.read()
-            self.process.stdout.close()
-            self.process.stderr.close()
+            stderr = self.stderr.read()
+            self.stdout.close()
+            self.stderr.close()
             return {'stdout' : stdout, 'stderr' : stderr, 'exitcode' : exitcode}
         
         stdout = stderr = ''
@@ -79,14 +81,14 @@ class Shell(object) :
         while testtimeout() :
             if not self.stdoutpoller.poll(polltime) :
                 continue
-            line = self.process.stdout.readline()
+            line = self.stdout.readline()
             if self.exittest(line) :
                 exitcode = self.getexitcode(line)
                 break
             stdout += line
         # Read stderr til there's nothing left to read. 
         while self.stderrpoller.poll(0) and testtimeout() :
-            stderr += self.process.stderr.readline()
+            stderr += self.stderr.readline()
         return {'stdout' : stdout, 'stderr' : stderr, 'exitcode' : exitcode}
 
     def eval(self, cmd, polltime = 100, timeout = None, raiseerror = False) :
@@ -121,18 +123,30 @@ giving output:
         if objnames :
             if cmd[-1:] != '\n' :
                 cmd += '\n'
-            cmd += 'print repr(dict(' \
-                + ', '.join([name + ' = ' + name for name in objnames])\
-                + '))\n'
-        cmd = 'python -c \'' + cmd + '\''
-        returnvals = self.eval(cmd, polltime, timeout, raiseerror)
+            cmd += 'print "__PYOBJECTS__", repr(dict('
+            if evalobjects :
+                cmd += ', '.join([name + ' = ' + name for name in objnames])
+            else :
+                cmd += ', '.join([name + ' = repr(' + name + ')' for name in objnames])
+            cmd += '))\n'
+        # Writing the cmd to a tempfile seems to be the safest way to retain the correct
+        # quotation marks, rather than using python -c.
+        flag, fname = tempfile.mkstemp()
+        with open(fname, 'w') as tmpfile :
+            tmpfile.write(cmd)
+        try :
+            returnvals = self.eval('python ' + fname, polltime, timeout, raiseerror)
+        except Exception as excpt :
+            msg = excpt.message
+            msg += '\nCommand written to file ' + fname + ':\n' + cmd
+            os.remove(fname)
+            raise Exception(msg)
+        os.remove(fname)
         if objnames :
             if returnvals['exitcode'] == 0 :
-                lastline = filter(None, returnvals['stdout'].split('\n'))[-1]
-                if evalobjects :
-                    returnvals['objects'] = eval(lastline)
-                else :
-                    returnvals['objects'] = lastline
+                lastline = filter(lambda line : '__PYOBJECTS__' in line, 
+                                  returnvals['stdout'].split('\n'))[-1]
+                returnvals['objects'] = eval(lastline[len('__PYOBJECTS__'):])
             else :
                 returnvals['objects'] = None
         return returnvals
