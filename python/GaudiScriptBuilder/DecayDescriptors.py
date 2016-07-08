@@ -96,30 +96,31 @@ class ParticleDescriptor(object) :
         for daughter in self :
             daughter.caret = val
 
-    def to_string(self, arrow = '->', ishead = True, carets = False) :
+    def to_string(self, arrow = '->', ishead = True, carets = False, depth = -1) :
         if carets :
             self.set_carets(carets)
         selfstr = ''
         selfstr += self.particle.name
-        if self.daughters :
+        if self.daughters and depth != 0 :
             selfstr += ' ' + arrow
             for daughter in self.daughters :
-                selfstr += ' ' + daughter.to_string(arrow, False)
+                selfstr += ' ' + daughter.to_string(arrow, False, depth = depth-1)
             if ishead :
                 if self.cc :
                     selfstr = '[' + selfstr + ']CC'
             else :
-                selfstr = '(' + selfstr + ')'
+                if self.cc :
+                    selfstr = '[' + selfstr + ']cc'
+                else :
+                    selfstr = '(' + selfstr + ')'
                 if self.caret :
                     selfstr = '^' + selfstr
-                if self.cc :
-                    selfstr += 'cc'
         else :
             if self.cc :
                 if ishead :
                     selfstr = '[' + selfstr + ']CC'
                 else :
-                    selfstr = '(' + selfstr + ')cc'
+                    selfstr = '[' + selfstr + ']cc'
             if self.caret :
                 selfstr = '^' + selfstr
         if carets :
@@ -226,6 +227,7 @@ class ParticleDescriptor(object) :
         return subs, newdesc
 
 def parse_decay_descriptor(desc) :
+    originaldesc = desc
     desc = desc.replace('^', '').strip()
     cc = False
     if desc.lower()[-2:] == 'cc' :
@@ -237,13 +239,18 @@ def parse_decay_descriptor(desc) :
     head = splitdesc[0]
     rhs = splitdesc[2:]
     daughters = []
-    while rhs :
-        if rhs[0][0] == '(' :
-            i = 1 
-            while i < len(rhs) and ')' not in rhs[i] :
-                i += 1
-            daughters.append(parse_decay_descriptor(' '.join(rhs[:i+1])))
-            rhs = rhs[i+1:]
-        else :
-            daughters.append(ParticleDescriptor(rhs.pop(0)))
-    return ParticleDescriptor(head, cc, daughters)
+    try :
+        while rhs :
+            # need to handle [], and sub-brackets. 
+            if rhs[0][0] == '(' :
+                i = 1 
+                while i < len(rhs) and ')' not in rhs[i] :
+                    i += 1
+                daughters.append(parse_decay_descriptor(' '.join(rhs[:i+1])))
+                rhs = rhs[i+1:]
+            else :
+                daughters.append(ParticleDescriptor(rhs.pop(0)))
+        return ParticleDescriptor(head, cc, daughters)
+    except :
+        print 'parse_decay_descriptor: failed to parse', repr(originaldesc)
+        raise

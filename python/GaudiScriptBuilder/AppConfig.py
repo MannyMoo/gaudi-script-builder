@@ -6,9 +6,14 @@ import Configurables
 import subprocess
 from GaudiScriptBuilder.DecayDescriptors import *
 import EnvUtils 
-from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, FilterDesktop, GaudiSequencer
-from PhysSelPython.Wrappers import Selection
+from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, \
+    FilterDesktop, GaudiSequencer, DaVinci__N3BodyDecays, DaVinci__N4BodyDecays,\
+    DaVinci__N5BodyDecays, DaVinci__N6BodyDecays
+
+from PhysSelPython.Wrappers import Selection, SelectionSequence
+#from GaudiConfUtils import configurableExists
 import StandardParticles
+#from GaudiKernel.Configurable import Configurable
 
 def is_trigger(version) :
     return isinstance(version, int) or '0x' in version
@@ -43,40 +48,55 @@ mcbasicinputs = {'K+' : StandardParticles.StdAllNoPIDsKaons,
                  'p+' : StandardParticles.StdAllNoPIDsProtons,
                  'e-' : StandardParticles.StdAllNoPIDsElectrons}
 
+selections = {}
+
 def build_mc_unbiased_selection(decayDesc, arrow = '==>') :
     preamble = [ "from LoKiPhysMC.decorators import *" , "from LoKiPhysMC.functions import mcMatch" ]
     decayDesc.set_carets(False)
     decayDescCC = decayDesc.copy()
     decayDescCC.cc = True
+    algname = decayDesc.get_full_alias() + '_MCSel'
+    if algname in selections :
+        return selections[algname]
     if not decayDesc.daughters :
+        alg = FilterDesktop(algname + '_Filter')
         if decayDesc.particle.name in mcbasicinputs :
             inputsel = mcbasicinputs[decayDesc.particle.name]
         else :
             conj = decayDesc.conjugate()
             if conj.particle.name in mcbasicinputs :
-                inputsel = mcbasicoutputs[conj.particle.name]
+                inputsel = mcbasicinputs[conj.particle.name]
             else :
                 raise ValueError("Can't find MC basic input for particle " + repr(decayDesc.particle.name))
-        return Selection(decayDesc.get_full_alias() + '_MCSel',
-                         Algorithm = FilterDesktop('mcMatch({0!r})'.format(decayDescCC.to_string(arrow))),
-                         RequiredSelections = [inputsel],
-                         Preambulo = preamble)
+        alg.Code = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
+        alg.Preambulo = preamble
+        sel = Selection(algname,
+                        Algorithm = alg,
+                        RequiredSelections = [inputsel])
+        selections[algname] = sel
+        return sel
     inputs = []
     daughtercuts = {}
-    for daughter in decayDesc.daughters :
-        sel = build_mc_unbiased_seq(daughter, arrow)
+    for daughter in decayDescCC.daughters :
+        originaldaughtercc = daughter.cc
+        daughter.cc = True
+        sel = build_mc_unbiased_selection(daughter, arrow)
+        daughter.cc = originaldaughtercc
         inputs.append(sel)
-        daughter.caret = True
-        daughtercuts[daughter.particle.name] = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
-        daughter.caret = False
-    comb = CombineParticles(decayDesc.get_full_alias() + '_MCComb',
-                            DecayDescriptor = str(decayDesc),
-                            MotherCut = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow)),
-                            Preambulo = preamble,
-                            DaughtersCuts = daughtercuts)
-    sel = Selection(decayDesc.get_full_alias() + '_MCSel',
-                    Algoritm = comb,
+        #daughter.caret = True
+        #daughtercuts[daughter.particle.name] = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
+        #daughter.caret = False
+    #comb = nCombiners[len(decayDesc.daughters)](algname + '_Comb')
+    comb = CombineParticles(algname + '_Comb')
+    # CombineParticles uses small cc, so set ishead = False
+    comb.DecayDescriptors = [decayDesc.to_string(depth = 1, ishead = False)]
+    comb.MotherCut = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
+    comb.Preambulo = preamble
+    comb.DaughtersCuts = daughtercuts
+    sel = Selection(algname,
+                    Algorithm = comb,
                     RequiredSelections = inputs)
+    selections[algname] = sel
     return sel
 
 def duck_punch_configurable() :
@@ -342,20 +362,8 @@ duck_punch_configurable()
 duck_punch_dtt()
 
 def duck_punch_davinci() :
-    
-    def configure_data_opts(self, datafile, explicitTags = False) :
-        #         benderenv = EnvUtils.get_lhcb_env('Bender')
-        #         opts = '''from BenderTools.Parser import dataType
-        # from Bender.DataUtils import evtSelInput
-        # from BenderTools.GetDBtags import useDBTagsFromData
-        # from Configurables import DaVinci
-        # ifiles = evtSelInput ( {datafile!r} )
-        # DataType, Simulation, ext = dataType ( ifiles )
-        # dv = DaVinci()
-        # tags = useDBTagsFromData(ifiles, False, True, dv)
-        # CondDBtag = dv.CondDBtag
-        # DDDBtag = dv.DDDBtag
-        # '''
+
+    def get_data_settings(self, datafile, explicitTags = False) :
         diracenv = EnvUtils.get_lhcb_env('LHCbDirac')
         opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
@@ -366,7 +374,6 @@ Simulation, DataType = lfns.get_data_type()
         attrs = 'InputType', 'Simulation', 'DataType'
         returnvals = diracenv.eval_python(opts, attrs, raiseerror = True)
 
-        conddb = CondDB()
         if returnvals['objects']['Simulation'] or explicitTags :
             opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
@@ -380,13 +387,22 @@ DDDBtag = tags['DDDB']
 '''.format(datafile = datafile)
             tagvals = diracenv.eval_python(opts, ('CondDBtag', 'DDDBtag'), raiseerror = True)
             returnvals['objects'].update(tagvals['objects'])
+        return returnvals['objects']
+    
+    def configure_data_opts(self, datafile, explicitTags = False) :
+        if not isinstance(datafile, dict) :
+            settings = self.get_data_settings(datafile, explicitTags)
         else :
-            conddb.LatestGlobalTagByDataType = returnvals['objects']['DataType']
+            settings = datafile
+
+        if not 'CondDBtag' in settings :
+            conddb = CondDB()
+            conddb.LatestGlobalTagByDataType = settings['DataType']
+            self.extraobjs.add(conddb)
         
-        for attr, val in returnvals['objects'].iteritems() :
+        for attr, val in settings.iteritems() :
             if hasattr(self.__class__, attr) :
                 setattr(self, attr, val)
-        self.extraobjs.add(conddb)
 
     def get_line_settings(self, linename, version) :
         isTrigger = is_trigger(version)
@@ -452,11 +468,17 @@ decayDescs = line.full_decay_descriptors()
                                 substitutions = {}) :
         if not isinstance(linesettings, dict) :
             linesettings = self.get_line_settings(*linesettings)
-        self.RootInTES = linesettings['rootInTES']
+        rootInTES = linesettings['rootInTES']
         linename = linesettings['linename']
         version = linesettings['version']
         decayDescs = linesettings['decayDescs']
         inputlocation = linesettings['inputLocation']
+        if self.getProp('Simulation') :
+            rootInTES = '/'.join(rootInTES.split('/')[:-1] + ['AllStreams'])
+        if self.getProp('InputType').lower() != 'mdst' :
+            inputlocation = os.path.join(rootInTES, inputlocation)
+            rootInTES = ''
+        self.RootInTES = rootInTES
         lineseq = GaudiSequencer(linename + '-Sequence')
         if substitutions :
             subs = {}
@@ -518,19 +540,26 @@ decayDescs = line.full_decay_descriptors()
                                  HLT1List = [],
                                  HLT2List = [],
                                  strippingList = []) :
-        seq = GaudiSequencer(decayDesc.get_full_alias() + '_MCSeq')
         sel = build_mc_unbiased_selection(decayDesc, arrow)
-        seq.Members.append(sel)
+        selseq = SelectionSequence(decayDesc.get_full_alias() + '_MCSeq',
+                                   TopSelection = sel)
+        seq = selseq.sequence()
         dtt = DecayTreeTuple(decayDesc.get_full_alias() + '_MCTuple',
-                             Decay = str(decayDesc),
-                             Inputs = [sel])
+                             Decay = decayDesc.to_string(carets = True),
+                             Inputs = [sel.outputLocation()], 
+                             ToolList = [])
+        dtt.addBranches(decayDesc.branches())
+        headBranch = getattr(dtt, decayDesc.get_alias())
+
         dtt.configure_tools(toolList = toolList,
                             mcToolList = mcToolList,
                             L0List = L0List,
                             HLT1List = HLT1List,
                             HLT2List = HLT2List,
-                            strippingList = strippingList)
+                            strippingList = strippingList,
+                            headBranch = headBranch)
         seq.Members.append(dtt)
+        self.UserAlgorithms.append(seq)
         return seq
 
     extraobjs = set()

@@ -291,7 +291,8 @@ TES = gaudi.evtsvc()
         proc.stderr.close()
         if tempCatalog :
             os.remove(catalogName)
-            os.remove(catalogName + '.temp')
+            if os.path.exists(catalogName + '.temp') :
+                os.remove(catalogName + '.temp')
             self.catalogName = None
         return {'proc' : proc, 'stdout' : stdout, 'stderr' : stderr}
 
