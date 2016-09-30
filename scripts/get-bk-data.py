@@ -8,7 +8,7 @@ def main() :
     argparser = ArgumentParser()
     argparser.add_argument('--paths')
     argparser.add_argument('--destDir', default = '.')
-
+    argparser.add_argument('--nocatalog', action = 'store_true')
     args = argparser.parse_args()
 
     if ',' in args.paths :
@@ -23,7 +23,7 @@ def main() :
         except :
             getter = BKDataGetter(bkpath)
             fname = getter.get_file_name()
-        datafile = getter.save_data_file(destDir = args.destDir, fname = fname)
+        datafile = getter.save_data_file(destDir = args.destDir, fname = fname, savecatalog = (not args.nocatalog))
         print bkpath, ':', datafile
 
 if __name__ == '__main__' :
