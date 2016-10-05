@@ -332,14 +332,16 @@ print '*** RECHEADER PARSED: {0}'.format(str(recHeader).replace('{ ', '{ "').rep
                      '2010' : ('/lhcb/LHCb/Collision10',),
                      '2011' : ('/lhcb/LHCb/Collision11',),
                      '2012' : ('/lhcb/LHCb/Collision12',), 
-                     '2015' : ('/lhcb/LHCb/Collision15',)}
+                     '2015' : ('/lhcb/LHCb/Collision15',),
+                     '2016' : ('/lhcb/LHCb/Collision16',)}
         mcTypes = {#'2008' : '',
                    #'2009' : ('/lhcb/MC/',),
                    'MC09' : ('/lhcb/MC/MC09',),
                    '2010' : ('/lhcb/MC/MC10', '/lhcb/MC/2010'),
                    '2011' : ('/lhcb/MC/MC11a', '/lhcb/MC/2011'),
                    '2012' : ('/lhcb/MC/MC12', '/lhcb/MC/2012'), 
-                   '2015' : ('/lhcb/MC/2015',)}
+                   '2015' : ('/lhcb/MC/2015',),
+                   '2016' : ('/lhcb/MC/2016',)}
         testLFN = self.lfns.keys()[0]
         for simulation, types in (False, dataTypes), (True, mcTypes) :
             for dataType, searches in types.iteritems() :

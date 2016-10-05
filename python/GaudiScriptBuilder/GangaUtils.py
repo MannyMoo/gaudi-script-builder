@@ -63,11 +63,14 @@ class BKDataGetter(object) :
             expandedfname = os.path.abspath(os.path.expandvars(fname))
 
         if savecatalog :
-            catalogname = fname + '.xml'
-            expandedcatalogname = expandedfname + '.xml'
-            with open(expandedcatalogname, 'w') as f :
-                f.write(data.getCatalog())
-            data.XMLCatalogueSlice = LocalFile(namePattern = catalogname)
+            try :
+                catalogname = fname + '.xml'
+                expandedcatalogname = expandedfname + '.xml'
+                with open(expandedcatalogname, 'w') as f :
+                    f.write(data.getCatalog())
+                data.XMLCatalogueSlice = LocalFile(namePattern = catalogname)
+            except :
+                print 'Failed to save catalogue!'
         if saveganga :
             export(data, expandedfname + '.ganga')
 

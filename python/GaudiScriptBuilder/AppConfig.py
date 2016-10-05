@@ -4,6 +4,7 @@ from GaudiKernel.Configurable import Configurable
 from DecayTreeTuple.Configuration import *
 import Configurables
 import subprocess
+import GaudiScriptBuilder
 from GaudiScriptBuilder.DecayDescriptors import *
 import EnvUtils 
 from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, \
@@ -574,7 +575,7 @@ class Script(object) :
     __slots__ = ('fname', 'objs', 'namedObjs') 
     
     def __init__(self, fname, objs, namedObjs) :
-        self.fname = fname
+        self.fname = os.path.expandvars(fname)
         self.objs = objs
         self.namedObjs = namedObjs
 
@@ -615,13 +616,19 @@ class DaVinciScript(Script) :
                  HLT1List = [],
                  HLT2List = [],
                  strippingList = [],
-                 headBranchName = 'lab0') :
+                 aliases = {},
+                 labXAliases = False, 
+                 substitutions = {}, 
+                 optssuffix = 'settings',
+                 extraopts = '', 
+                 extraoptsfile = '') :
         from Configurables import GaudiSequencer, DaVinci, TupleToolStripping, \
             TupleToolTrigger
     
         # Defines Simulation, CondDBtag, DDDBtag, InputType, DataType
         dv = DaVinci()
-        dv.configure_data_opts(datafile, explicitTags)
+        dataopts = get_data_opts(datafile, explicitTags, optssuffix)
+        dv.configure_data_opts(dataopts)
 
         dv.TupleFile = 'DVTuples.root'
         dv.HistogramFile = 'DVHistos.root'
@@ -632,14 +639,51 @@ class DaVinciScript(Script) :
             dv.add_TrackScaleState()
 
         # Defines rootInTES, inputLocation, and decayDescs
-        dv.add_line_tuple_sequence(linename, version, 
-                                   toolList, mcToolList,
-                                   L0List, HLT1List, HLT2List, strippingList,
-                                   headBranchName)
+        lineopts = get_line_settings(linename, version, os.path.split(fname)[0], optssuffix)
+        lineopts, lineseq = dv.add_line_tuple_sequence(lineopts, 
+                                                       toolList, mcToolList,
+                                                       L0List, HLT1List, HLT2List, strippingList,
+                                                       aliases, labXAliases, substitutions)
+        dtt = lineseq.Members[-1]
+
+        localns = dict(locals())
+        localns.update(globals())
+        if extraopts :
+            exec extraopts in localns
+        if extraoptsfile :
+            execfile(os.path.expandvars(extraoptsfile)) in localns 
 
         objsdict = {'dv' : dv}
 
         Script.__init__(self, fname, dv.extraobjs, objsdict)
+
+def get_line_settings(line, version, outputdir = '.', suffix = 'settings') :
+    fname = os.path.expandvars(os.path.join(outputdir, '_'.join([line, version, suffix + '.py'])))
+    if os.path.exists(fname) :
+        with open(fname) as f :
+            opts = f.read()
+        return eval(opts)
+    opts = DaVinci().get_line_settings(line, version)
+    try :
+        with open(fname, 'w') as f :
+            f.write(repr(opts))
+    except IOError :
+        print 'WARNING: Couldn\'t write to file', fname
+    return opts
+
+def get_data_opts(datafile, explicitTags = False, suffix = 'settings') :
+    fname = os.path.expandvars(datafile.replace('.py', '') + '_' + suffix + '.py')
+    if os.path.exists(fname) :
+        with open(fname) as f :
+            opts = f.read()
+        return eval(opts)
+    settings = DaVinci().get_data_settings(datafile, explicitTags)
+    try :
+        with open(fname, 'w') as f :
+            f.write(repr(settings))
+    except IOError :
+        print 'WARNING: Couldn\'t write to file', fname
+    return settings
         
 if __name__ == '__main__' :
 
