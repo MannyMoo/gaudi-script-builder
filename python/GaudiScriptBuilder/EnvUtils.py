@@ -154,7 +154,7 @@ giving output:
 class LHCbEnv(Shell) :
     lbloginscript = '/afs/cern.ch/lhcb/software/releases/LBSCRIPTS/prod/InstallArea/scripts/LbLogin.sh'
 
-    def __init__(self, env, version = None, platform = None, shell = 'bash',
+    def __init__(self, env, version = 'latest', platform = None, shell = 'bash',
                  exitcodeline = 'echo "*_*_*_* EXITCODE: $?"\n',
                  exittest = '*_*_*_* EXITCODE: ',
                  getexitcode = lambda line : int(line.rstrip('\n').split()[-1]),
@@ -170,7 +170,7 @@ class LHCbEnv(Shell) :
         Shell.__init__(self, args, exitcodeline, exittest, getexitcode, inittimeout)
 
 lhcbenvs = {}
-def get_lhcb_env(env, version = None, platform = None, **kwargs) :
+def get_lhcb_env(env, version = 'latest', platform = None, **kwargs) :
     global lhcbenvs
     key = env
     if version :

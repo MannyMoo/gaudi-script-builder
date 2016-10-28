@@ -9,12 +9,13 @@ from GaudiScriptBuilder.DecayDescriptors import *
 import EnvUtils 
 from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, \
     FilterDesktop, GaudiSequencer, DaVinci__N3BodyDecays, DaVinci__N4BodyDecays,\
-    DaVinci__N5BodyDecays, DaVinci__N6BodyDecays
+    DaVinci__N5BodyDecays, DaVinci__N6BodyDecays, CheckPV
 
 from PhysSelPython.Wrappers import Selection, SelectionSequence
 #from GaudiConfUtils import configurableExists
 import StandardParticles
 #from GaudiKernel.Configurable import Configurable
+from TeslaTools import TeslaTruthUtils
 
 def is_trigger(version) :
     return isinstance(version, int) or '0x' in version
@@ -277,7 +278,8 @@ def duck_punch_dtt() :
                         HLT1List = [],
                         HLT2List = [],
                         strippingList = [],
-                        headBranch = None) :
+                        headBranch = None,
+                        isTrigger = False) :
 
         for trigList in L0List, HLT1List, HLT2List, strippingList :
             for i, trig in enumerate(trigList) :
@@ -286,6 +288,12 @@ def duck_punch_dtt() :
 
         for tool in toolList + mcToolList :
             self.addTupleTool(tool)
+
+        if isTrigger :
+            relations = TeslaTruthUtils.getRelLoc('')
+            TeslaTruthUtils.makeTruth(self,
+                                      [relations],
+                                      mcToolList)
 
         if strippingList :
             ttstrip = self.addTupleTool('TupleToolStripping')
@@ -328,8 +336,6 @@ def duck_punch_dtt() :
                            HLT1List = [],
                            HLT2List = [],
                            strippingList = []) :
-
-        
         
         self.Decay = decaydesc.to_string(carets = True)
         self.Inputs = [inputloc]
@@ -348,12 +354,26 @@ def duck_punch_dtt() :
         headBranch = getattr(self, decaydesc.get_alias())
 
         self.configure_tools(toolList = toolList,
-                             mcToolList = mcToolList,
+                             mcToolList = mcToolList if simulation else [],
                              L0List = L0List,
                              HLT1List = HLT1List,
                              HLT2List = HLT2List,
                              strippingList = strippingList,
-                             headBranch = headBranch)
+                             headBranch = headBranch,
+                             isTrigger = isTrigger)
+        if simulation :
+            lokituple = headBranch.addTupleTool('LoKi::Hybrid::TupleTool')
+            lokituple.Preambulo = ['from LoKiPhysMC.decorators import *',
+                                   'from LoKiPhysMC.functions import mcMatch']
+            if isTrigger :
+                relations = TeslaTruthUtils.getRelLoc('')
+                mcmatch = 'switch(mcMatch({0!r}, {1!r}), 1, 0)'.format(decaydesc.to_string(carets = False,
+                                                                                           arrow = '==>'),
+                                                                       relations)
+            else :
+                mcmatch = 'switch(mcMatch({0!r}), 1, 0)'.format(decaydesc.to_string(carets = False,
+                                                                                    arrow = '==>'))
+            lokituple.Variables = {'mcMatch' : mcmatch}
 
     for name, val in locals().iteritems() :
         setattr(DecayTreeTuple, name, val)
@@ -364,8 +384,8 @@ duck_punch_dtt()
 
 def duck_punch_davinci() :
 
-    def get_data_settings(self, datafile, explicitTags = False) :
-        diracenv = EnvUtils.get_lhcb_env('LHCbDirac')
+    def get_data_settings(self, datafile, explicitTags = False, datatype = None, diracversion = None) :
+        diracenv = EnvUtils.get_lhcb_env('LHCbDirac', version = diracversion)
         opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
 lfns = LFNSet(get_lfns_from_bk_file({datafile!r})[0])
@@ -374,6 +394,9 @@ Simulation, DataType = lfns.get_data_type()
 '''.format(datafile = datafile)
         attrs = 'InputType', 'Simulation', 'DataType'
         returnvals = diracenv.eval_python(opts, attrs, raiseerror = True)
+
+        if datatype :
+            returnvals['objects']['DataType'] = datatype 
 
         if returnvals['objects']['Simulation'] or explicitTags :
             opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
@@ -390,11 +413,16 @@ DDDBtag = tags['DDDB']
             returnvals['objects'].update(tagvals['objects'])
         return returnvals['objects']
     
-    def configure_data_opts(self, datafile, explicitTags = False) :
+    def configure_data_opts(self, datafile, explicitTags = False, datatype = None, diracversion = None) :
         if not isinstance(datafile, dict) :
-            settings = self.get_data_settings(datafile, explicitTags)
+            settings = self.get_data_settings(datafile, explicitTags, datatype, diracversion)
         else :
             settings = datafile
+
+        if settings['DataType'] == None :
+            if not datatype :
+                raise ValueError("Couldn't determine DataType from LFNs and DataType isn't set manually!")
+            settings['DataType'] = datatype
 
         if not 'CondDBtag' in settings :
             conddb = CondDB()
@@ -434,12 +462,6 @@ decayDescs = line.full_decay_descriptors()
         returnVals = env.eval_python(opts, ('rootInTES', 'inputLocation', 'decayDescs'),
                                      raiseerror = True)
 
-        self.RootInTES = returnVals['objects']['rootInTES']
-        if isTrigger :
-            from Configurables import DstConf
-            dstconf = DstConf()
-            dstconf.Turbo = True
-            self.extraobjs.add(dstconf)
         objs = returnVals['objects']
         objs['decayDescs'] = list(objs['decayDescs'])
         objs['linename'] = linename
@@ -469,6 +491,7 @@ decayDescs = line.full_decay_descriptors()
                                 substitutions = {}) :
         if not isinstance(linesettings, dict) :
             linesettings = self.get_line_settings(*linesettings)
+        isTrigger = is_trigger(linesettings['version'])
         rootInTES = linesettings['rootInTES']
         linename = linesettings['linename']
         version = linesettings['version']
@@ -479,7 +502,14 @@ decayDescs = line.full_decay_descriptors()
         if self.getProp('InputType').lower() != 'mdst' :
             inputlocation = os.path.join(rootInTES, inputlocation)
             rootInTES = ''
+
         self.RootInTES = rootInTES
+        if isTrigger :
+            from Configurables import DstConf
+            dstconf = DstConf()
+            dstconf.Turbo = True
+            self.extraobjs.add(dstconf)
+
         lineseq = GaudiSequencer(linename + '-Sequence')
         if substitutions :
             subs = {}
@@ -507,7 +537,9 @@ decayDescs = line.full_decay_descriptors()
             desctuple.configure_for_line(desc, inputlocation,
                                          linename, version, 
                                          self.getProp('Simulation'),
-                                         toolList, mcToolList, L0List, HLT1List, HLT2List,
+                                         toolList, 
+                                         mcToolList, 
+                                         L0List, HLT1List, HLT2List,
                                          strippingList)
             lineseq.Members.append(desctuple)
         self.UserAlgorithms.append(lineseq)
@@ -545,6 +577,7 @@ decayDescs = line.full_decay_descriptors()
         selseq = SelectionSequence(decayDesc.get_full_alias() + '_MCSeq',
                                    TopSelection = sel)
         seq = selseq.sequence()
+        seq.Members.insert(0, CheckPV())
         dtt = DecayTreeTuple(decayDesc.get_full_alias() + '_MCTuple',
                              Decay = decayDesc.to_string(carets = True),
                              Inputs = [sel.outputLocation()], 
@@ -559,6 +592,15 @@ decayDescs = line.full_decay_descriptors()
                             HLT2List = HLT2List,
                             strippingList = strippingList,
                             headBranch = headBranch)
+
+        lokituple = headBranch.addTupleTool('LoKi::Hybrid::TupleTool')
+        lokituple.Preambulo = ['from LoKiPhysMC.decorators import *',
+                               'from LoKiPhysMC.functions import mcMatch']
+        mcmatch = 'switch(mcMatch({0!r}), 1, 0)'.format(decayDesc.to_string(carets = False,
+                                                                            arrow = '==>'))
+        lokituple.Variables = {'mcMatch' : mcmatch}
+
+
         seq.Members.append(dtt)
         self.UserAlgorithms.append(seq)
         return seq
@@ -621,13 +663,16 @@ class DaVinciScript(Script) :
                  substitutions = {}, 
                  optssuffix = 'settings',
                  extraopts = '', 
-                 extraoptsfile = '') :
+                 extraoptsfile = '',
+                 datatype = None,
+                 diracversion = None,
+                 force = False) :
         from Configurables import GaudiSequencer, DaVinci, TupleToolStripping, \
             TupleToolTrigger
     
         # Defines Simulation, CondDBtag, DDDBtag, InputType, DataType
         dv = DaVinci()
-        dataopts = get_data_opts(datafile, explicitTags, optssuffix)
+        dataopts = get_data_opts(datafile, explicitTags, optssuffix, datatype, diracversion, force)
         dv.configure_data_opts(dataopts)
 
         dv.TupleFile = 'DVTuples.root'
@@ -639,12 +684,18 @@ class DaVinciScript(Script) :
             dv.add_TrackScaleState()
 
         # Defines rootInTES, inputLocation, and decayDescs
-        lineopts = get_line_settings(linename, version, os.path.split(fname)[0], optssuffix)
+        lineopts = get_line_settings(linename, version, os.path.split(fname)[0], optssuffix, force)
         lineopts, lineseq = dv.add_line_tuple_sequence(lineopts, 
                                                        toolList, mcToolList,
                                                        L0List, HLT1List, HLT2List, strippingList,
                                                        aliases, labXAliases, substitutions)
         dtt = lineseq.Members[-1]
+
+        if dataopts['Simulation'] :
+            mcunbseqs = []
+            for desc in lineopts['decayDescs'] :
+                mcunbseq = dv.add_mc_unbiased_sequence(desc)
+                mcunbseqs.append(mcunbseq)
 
         localns = dict(locals())
         localns.update(globals())
@@ -657,9 +708,9 @@ class DaVinciScript(Script) :
 
         Script.__init__(self, fname, dv.extraobjs, objsdict)
 
-def get_line_settings(line, version, outputdir = '.', suffix = 'settings') :
+def get_line_settings(line, version, outputdir = '.', suffix = 'settings', force = False) :
     fname = os.path.expandvars(os.path.join(outputdir, '_'.join([line, version, suffix + '.py'])))
-    if os.path.exists(fname) :
+    if not force and os.path.exists(fname) :
         with open(fname) as f :
             opts = f.read()
         return eval(opts)
@@ -671,13 +722,14 @@ def get_line_settings(line, version, outputdir = '.', suffix = 'settings') :
         print 'WARNING: Couldn\'t write to file', fname
     return opts
 
-def get_data_opts(datafile, explicitTags = False, suffix = 'settings') :
+def get_data_opts(datafile, explicitTags = False, suffix = 'settings', datatype = None, 
+                  diracversion = None, force = False) :
     fname = os.path.expandvars(datafile.replace('.py', '') + '_' + suffix + '.py')
-    if os.path.exists(fname) :
+    if not force and os.path.exists(fname) :
         with open(fname) as f :
             opts = f.read()
         return eval(opts)
-    settings = DaVinci().get_data_settings(datafile, explicitTags)
+    settings = DaVinci().get_data_settings(datafile, explicitTags, datatype, diracversion = diracversion)
     try :
         with open(fname, 'w') as f :
             f.write(repr(settings))

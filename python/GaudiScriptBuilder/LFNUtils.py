@@ -254,11 +254,17 @@ FileCatalog().Catalogs = ["xmlcatalog_file:{0}"]
         return fname
 
     def get_gaudipython_opts(self, extraopts = '') :
+        inputtype = self.get_input_type()
+        simulation, datatype = self.get_data_type()
+        if not datatype :
+            datatype = '2012'
         opts = self.get_iohelper_lines() + '''
 from Configurables import DaVinci
 
 dv = DaVinci()
 dv.DataType = {0!r}
+dv.Simulation = {1!r}
+dv.InputType = {2!r}
 
 import GaudiPython
 
@@ -269,7 +275,7 @@ gaudi.HistogramPersistency = 'ROOT'
 gaudi.initialize()
 
 TES = gaudi.evtsvc()
-'''.format(self.get_data_type()[1]) + extraopts
+'''.format(datatype, simulation, inputtype) + extraopts
         return opts 
 
     def run_gaudipython(self, extraopts = '', dvVersion = 'v36r7') :
@@ -327,25 +333,27 @@ print '*** RECHEADER PARSED: {0}'.format(str(recHeader).replace('{ ', '{ "').rep
     def get_data_type(self) :
         if not self.lfns :
             return None, None
-        dataTypes = {#'2008' : (),
-                     #'2009' : (),
-                     '2010' : ('/lhcb/LHCb/Collision10',),
-                     '2011' : ('/lhcb/LHCb/Collision11',),
-                     '2012' : ('/lhcb/LHCb/Collision12',), 
-                     '2015' : ('/lhcb/LHCb/Collision15',),
-                     '2016' : ('/lhcb/LHCb/Collision16',)}
-        mcTypes = {#'2008' : '',
-                   #'2009' : ('/lhcb/MC/',),
-                   'MC09' : ('/lhcb/MC/MC09',),
-                   '2010' : ('/lhcb/MC/MC10', '/lhcb/MC/2010'),
-                   '2011' : ('/lhcb/MC/MC11a', '/lhcb/MC/2011'),
-                   '2012' : ('/lhcb/MC/MC12', '/lhcb/MC/2012'), 
-                   '2015' : ('/lhcb/MC/2015',),
-                   '2016' : ('/lhcb/MC/2016',)}
+        dataTypes = (#('2008', ()),
+                     #('2009', ()),
+                     ('2010', ('/lhcb/LHCb/Collision10',)),
+                     ('2011', ('/lhcb/LHCb/Collision11',)),
+                     ('2012', ('/lhcb/LHCb/Collision12',)), 
+                     ('2015', ('/lhcb/LHCb/Collision15',)),
+                     ('2016', ('/lhcb/LHCb/Collision16',)),
+                     (None, ('/LHCb/',)))
+        mcTypes = (#('2008', ()),
+                   #('2009', ('/lhcb/MC/',)),
+                   ('MC09', ('/lhcb/MC/MC09',)),
+                   ('2010', ('/lhcb/MC/MC10', '/lhcb/MC/2010')),
+                   ('2011', ('/lhcb/MC/MC11a', '/lhcb/MC/2011')),
+                   ('2012', ('/lhcb/MC/MC12', '/lhcb/MC/2012')), 
+                   ('2015', ('/lhcb/MC/2015',)),
+                   ('2016', ('/lhcb/MC/2016',)),
+                   (None, ('/MC/',)))
         testLFN = self.lfns.keys()[0]
         for simulation, types in (False, dataTypes), (True, mcTypes) :
-            for dataType, searches in types.iteritems() :
-                if reduce(lambda x,y : x or y in testLFN, searches, False) :
+            for dataType, searches in types :
+                if any(search in testLFN for search in searches) :
                     return simulation, dataType
         return None, None
 
