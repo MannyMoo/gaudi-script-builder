@@ -2,6 +2,7 @@
 
 from GaudiKernel.Configurable import Configurable
 from DecayTreeTuple.Configuration import *
+from Configurables import MCDecayTreeTuple
 import Configurables
 import subprocess
 import GaudiScriptBuilder
@@ -273,7 +274,8 @@ def duck_punch_dtt() :
                                           "TupleToolTrackInfo",
                                           "TupleToolRecoStats",],
                         mcToolList = ['TupleToolMCTruth',
-                                      'TupleToolMCBackgroundInfo'],
+                                      'TupleToolMCBackgroundInfo',
+                                      'MCTupleToolPrompt'],
                         L0List = [],
                         HLT1List = [],
                         HLT2List = [],
@@ -286,10 +288,20 @@ def duck_punch_dtt() :
                 if trig[-8:] != 'Decision' :
                     trigList[i] += 'Decision'
 
-        for tool in toolList + mcToolList :
+        for tool in toolList :
             self.addTupleTool(tool)
-
+        if mcToolList :
+            ttmc = self.addTupleTool('TupleToolMCTruth')
+            for tool in mcToolList :
+                if tool == 'TupleToolMCTruth' :
+                    continue
+                if tool.find('MCTupleTool') == 0 :
+                    ttmc.addTupleTool(tool)
+                else :
+                    self.addTupleTool(tool)
+ 
         if isTrigger :
+            # Is this right? Or should I pass it the list of sub-tools of TupleToolMCTruth?
             relations = TeslaTruthUtils.getRelLoc('')
             TeslaTruthUtils.makeTruth(self,
                                       [relations],
@@ -331,7 +343,8 @@ def duck_punch_dtt() :
                                        "TupleToolTrackInfo",
                                        "TupleToolRecoStats",],
                            mcToolList = ['TupleToolMCTruth',
-                                         'TupleToolMCBackgroundInfo'],
+                                         'TupleToolMCBackgroundInfo',
+                                         'MCTupleToolPrompt'],
                            L0List = [],
                            HLT1List = [],
                            HLT2List = [],
@@ -481,7 +494,8 @@ decayDescs = line.full_decay_descriptors()
                                             "TupleToolTrackInfo",
                                             "TupleToolRecoStats",],
                                 mcToolList = ['TupleToolMCTruth',
-                                              'TupleToolMCBackgroundInfo'],
+                                              'TupleToolMCBackgroundInfo',
+                                              'MCTupleToolPrompt'],
                                 L0List = [],
                                 HLT1List = [],
                                 HLT2List = [],
@@ -568,7 +582,8 @@ decayDescs = line.full_decay_descriptors()
                                              "TupleToolTrackInfo",
                                              "TupleToolRecoStats",],
                                  mcToolList = ['TupleToolMCTruth',
-                                               'TupleToolMCBackgroundInfo'],
+                                               'TupleToolMCBackgroundInfo',
+                                               'MCTupleToolPrompt'],
                                  L0List = [],
                                  HLT1List = [],
                                  HLT2List = [],
@@ -603,6 +618,11 @@ decayDescs = line.full_decay_descriptors()
 
         seq.Members.append(dtt)
         self.UserAlgorithms.append(seq)
+
+        mcdtt = MCDecayTreeTuple(decayDesc.get_full_alias() + '_MCDecayTreeTuple')
+        mcdtt.Decay = decayDesc.to_string(arrow = arrow, carets = True)
+        self.UserAlgorithms.append(mcdtt)
+
         return seq
 
     extraobjs = set()
@@ -653,7 +673,8 @@ class DaVinciScript(Script) :
                              "TupleToolTrackInfo",
                              "TupleToolRecoStats",],
                  mcToolList = ['TupleToolMCTruth',
-                               'TupleToolMCBackgroundInfo'],
+                               'TupleToolMCBackgroundInfo',
+                               'MCTupleToolPrompt'],
                  L0List = [],
                  HLT1List = [],
                  HLT2List = [],
@@ -696,7 +717,6 @@ class DaVinciScript(Script) :
             for desc in lineopts['decayDescs'] :
                 mcunbseq = dv.add_mc_unbiased_sequence(desc)
                 mcunbseqs.append(mcunbseq)
-
         localns = dict(locals())
         localns.update(globals())
         if extraopts :
