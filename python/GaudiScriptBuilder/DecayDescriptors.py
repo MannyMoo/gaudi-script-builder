@@ -154,7 +154,8 @@ class ParticleDescriptor(object) :
         if self.alias :
             return self.alias
         alias = self.particle.name
-        for match, sub in ('+', 'plus'), ('-', 'minus'), ('~', 'bar'), ('*', 'star') :
+        for match, sub in ('+', 'plus'), ('-', 'minus'), ('~', 'bar'), ('*', 'star'), \
+                ('(', '_'), (')', '_'):
             alias = alias.replace(match, sub)
         return alias
 
