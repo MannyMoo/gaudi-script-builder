@@ -2,9 +2,9 @@
 
 import subprocess, select, timeit, exceptions, pprint, tempfile, os
 
-strippingDVVersions = {'stripping21' : 'v36r2', # Should be 'v36r1p3' but it crashes when importing anything Stripping related.
-                       'stripping20' : 'v32r2p1',
-                       'stripping20r1' : 'v32r2p3'}
+strippingDVVersions = {'stripping21' : ('v36r2', 'x86_64-slc6-gcc48-opt'), # Should be 'v36r1p3' but it crashes when importing anything Stripping related.
+                       'stripping20' : ('v32r2p1', 'x86_64-slc5-gcc46-opt'),
+                       'stripping20r1' : ('v32r2p3', 'x86_64-slc5-gcc46-opt')}
 
 def get_stripping_dv_version(version) :
     version = version.lower()
@@ -16,7 +16,7 @@ def get_stripping_dv_version(version) :
     version = 'stripping' + version.replace('stripping', '').split('r')[0]
     if version in strippingDVVersions :
         return strippingDVVersions[version]
-    return None
+    return None, None
 
 class Shell(object) :
     __slots__ = ('args', 'process', 'stdoutpoller', 'stderrpoller', 'exitcodeline', 
@@ -152,20 +152,17 @@ giving output:
         return returnvals
 
 class LHCbEnv(Shell) :
-    lbloginscript = '/afs/cern.ch/lhcb/software/releases/LBSCRIPTS/prod/InstallArea/scripts/LbLogin.sh'
 
     def __init__(self, env, version = 'latest', platform = None, shell = 'bash',
                  exitcodeline = 'echo "*_*_*_* EXITCODE: $?"\n',
                  exittest = '*_*_*_* EXITCODE: ',
                  getexitcode = lambda line : int(line.rstrip('\n').split()[-1]),
-                 inittimeout = None) :
+                 inittimeout = 600) :
         # Probably more options could be considered here. 
         args = ['lb-run']
         if platform :
             args += ['-c', platform]
-        args += [env]
-        if version :
-            args += [version]
+        args += [env + '/' + version]
         args += [shell]
         Shell.__init__(self, args, exitcodeline, exittest, getexitcode, inittimeout)
 
@@ -182,8 +179,9 @@ def get_lhcb_env(env, version = 'latest', platform = None, **kwargs) :
         lhcbenvs[key] = LHCbEnv(env, version, platform, **kwargs)
     return lhcbenvs[key]
 
-def get_stripping_env(version, platform = None, **kwargs) :
-    return get_lhcb_env('DaVinci', get_stripping_dv_version(version), platform, **kwargs)
+def get_stripping_env(version, **kwargs) :
+    ver, platform = get_stripping_dv_version(version)
+    return get_lhcb_env('DaVinci', version = ver, platform = platform, **kwargs)
 
 if __name__ == '__main__' :
     
