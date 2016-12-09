@@ -13,7 +13,7 @@ In order to configure DaVinci and DecayTreeTuple to obtain an ntuple.
 # less $MOOREROOT/../../../../HLT/HLT_v24r2/Hlt/TCKUtils/python/TCKUtils/utils.py
 from TCKUtils import utils as tckutils
 import re, os
-from collections import OrderedDict
+from ordereddict import OrderedDict
 from GaudiScriptBuilder.DecayDescriptors import *
 from GaudiScriptBuilder.LineConfigBase import LineConfigBase
 

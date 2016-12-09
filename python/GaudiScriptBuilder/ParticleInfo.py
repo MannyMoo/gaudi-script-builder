@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from ordereddict import OrderedDict
 
 class ParticleInfo(object) :
     __slots__ = ('name', 'geantid', 'pdgid', 'charge', 'mass', 'lifetime', 

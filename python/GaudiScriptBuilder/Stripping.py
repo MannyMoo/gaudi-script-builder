@@ -26,10 +26,7 @@ from StrippingArchive.Utils import buildStreams
 from StrippingArchive import strippingArchive
 import re, os
 from Configurables import GaudiSequencer, CombineParticles
-try :
-    from collections import OrderedDict
-except :
-    from ordereddict import OrderedDict
+from ordereddict import OrderedDict
 from GaudiScriptBuilder.DecayDescriptors import *
 from GaudiScriptBuilder.LineConfigBase import LineConfigBase
 
