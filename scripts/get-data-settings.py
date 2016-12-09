@@ -9,7 +9,7 @@ def main() :
     argparser.add_argument('--explicittags', action = 'store_true', default = False)
     argparser.add_argument('--optssuffix', default = 'settings')
     argparser.add_argument('--datatype', default = None)
-    argparser.add_argument('--diracversion', default = None)
+    argparser.add_argument('--diracversion', default = 'latest')
     argparser.add_argument('--noforce', action = 'store_true', default = False)
     args = argparser.parse_args()
 

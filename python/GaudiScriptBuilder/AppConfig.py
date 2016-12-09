@@ -397,7 +397,7 @@ duck_punch_dtt()
 
 def duck_punch_davinci() :
 
-    def get_data_settings(self, datafile, explicitTags = False, datatype = None, diracversion = None) :
+    def get_data_settings(self, datafile, explicitTags = False, datatype = None, diracversion = 'latest') :
         diracenv = EnvUtils.get_lhcb_env('LHCbDirac', version = diracversion)
         opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
