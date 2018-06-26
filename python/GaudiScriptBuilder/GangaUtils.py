@@ -1,18 +1,16 @@
 
 import os, sys
 
-if not os.environ.has_key('GANGASYSROOT') :
-    raise EnvironmentError('''Environment variable GANGASYSROOT is undefined! Can\'t import Ganga GPI!
-Do 
+if os.environ.has_key('GANGASYSROOT') :
+    sys.path.insert(0, os.path.normpath('{gangaSys}{sep}..{sep}install{sep}ganga{sep}python'\
+                                            .format(gangaSys=os.environ['GANGASYSROOT'], sep = os.sep)))
+else :
+    sys.path.insert(0, '/cvmfs/ganga.cern.ch/Ganga/install/LATEST/python/Ganga/')
 
-SetupProject Ganga
-
-and try again.''')
-
-sys.path.insert(0, os.path.normpath('{gangaSys}{sep}..{sep}install{sep}ganga{sep}python'\
-                                        .format(gangaSys=os.environ['GANGASYSROOT'], sep = os.sep)))
-
-from Ganga.GPI import BKQuery, LocalFile, export
+try :
+    from Ganga.GPI import BKQuery, LocalFile, export
+except ImportError :
+    from GangaCore.GPI import BKQuery, LocalFile, export
 
 def get_bk_path(bkpath) :
     '''Remove the sim+std:/ or evt+std:/ prefix from a bookkeeping path, if it's there. 

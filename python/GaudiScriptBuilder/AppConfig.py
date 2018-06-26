@@ -10,7 +10,7 @@ from GaudiScriptBuilder.DecayDescriptors import *
 import EnvUtils 
 from Configurables import DaVinci, LHCbApp, CondDB, SubstitutePID, CombineParticles, \
     FilterDesktop, GaudiSequencer, DaVinci__N3BodyDecays, DaVinci__N4BodyDecays,\
-    DaVinci__N5BodyDecays, DaVinci__N6BodyDecays, CheckPV
+    DaVinci__N5BodyDecays, DaVinci__N6BodyDecays, CheckPV, TupleToolMCTruth
 
 from PhysSelPython.Wrappers import Selection, SelectionSequence
 #from GaudiConfUtils import configurableExists
@@ -300,12 +300,16 @@ def duck_punch_dtt() :
                 else :
                     self.addTupleTool(tool)
  
-        if isTrigger :
+        if isTrigger and mcToolList :
             # Is this right? Or should I pass it the list of sub-tools of TupleToolMCTruth?
+            hlt2line = self.Inputs[0].split('/')[-2]
+            # Need this for 2015
+            #relations = TeslaTruthUtils.getRelLoc(hlt2line + '/')
+            # This for 2016 ...
             relations = TeslaTruthUtils.getRelLoc('')
             TeslaTruthUtils.makeTruth(self,
                                       [relations],
-                                      mcToolList)
+                                      ttmc.ToolList)
 
         if strippingList :
             ttstrip = self.addTupleTool('TupleToolStripping')
@@ -367,7 +371,7 @@ def duck_punch_dtt() :
         headBranch = getattr(self, decaydesc.get_alias())
 
         self.configure_tools(toolList = toolList,
-                             mcToolList = mcToolList if simulation else [],
+                             mcToolList = (mcToolList if simulation else []),
                              L0List = L0List,
                              HLT1List = HLT1List,
                              HLT2List = HLT2List,
@@ -379,6 +383,9 @@ def duck_punch_dtt() :
             lokituple.Preambulo = ['from LoKiPhysMC.decorators import *',
                                    'from LoKiPhysMC.functions import mcMatch']
             if isTrigger :
+                # Need this for 2015
+                #relations = TeslaTruthUtils.getRelLoc(inputloc.split('/')[-2] + '/')
+                # This for 2015 ...
                 relations = TeslaTruthUtils.getRelLoc('')
                 mcmatch = 'switch(mcMatch({0!r}, {1!r}), 1, 0)'.format(decaydesc.to_string(carets = False,
                                                                                            arrow = '==>'),
@@ -397,7 +404,7 @@ duck_punch_dtt()
 
 def duck_punch_davinci() :
 
-    def get_data_settings(self, datafile, explicitTags = False, datatype = None, diracversion = 'latest') :
+    def get_data_settings(self, datafile, explicitTags = False, datatype = None, diracversion = 'prod') :
         diracenv = EnvUtils.get_lhcb_env('LHCbDirac', version = diracversion)
         opts = '''from GaudiScriptBuilder.LFNUtils import LFNSet, get_lfns_from_bk_file
 
@@ -426,7 +433,7 @@ DDDBtag = tags['DDDB']
             returnvals['objects'].update(tagvals['objects'])
         return returnvals['objects']
     
-    def configure_data_opts(self, datafile, explicitTags = False, datatype = None, diracversion = None) :
+    def configure_data_opts(self, datafile, explicitTags = False, datatype = None, diracversion = 'prod') :
         if not isinstance(datafile, dict) :
             settings = self.get_data_settings(datafile, explicitTags, datatype, diracversion)
         else :
@@ -446,7 +453,7 @@ DDDBtag = tags['DDDB']
             if hasattr(self.__class__, attr) :
                 setattr(self, attr, val)
 
-    def get_line_settings(self, linename, version) :
+    def get_line_settings(self, linename, version, mooreversion = 'latest') :
         isTrigger = is_trigger(version)
         opts = '''version = {0!r}
 linename = {1!r}
@@ -468,7 +475,7 @@ decayDescs = line.full_decay_descriptors()
            self.getProp('Simulation'))
 
         if isTrigger :
-            env = EnvUtils.get_lhcb_env('Moore')
+            env = EnvUtils.get_lhcb_env('Moore', mooreversion)
         else :
             env = EnvUtils.get_stripping_env(version)
 
@@ -502,7 +509,8 @@ decayDescs = line.full_decay_descriptors()
                                 strippingList = [],
                                 aliases = {},
                                 labXAliases = False,
-                                substitutions = {}) :
+                                substitutions = {},
+                                suffix = '') :
         if not isinstance(linesettings, dict) :
             linesettings = self.get_line_settings(*linesettings)
         isTrigger = is_trigger(linesettings['version'])
@@ -511,7 +519,7 @@ decayDescs = line.full_decay_descriptors()
         version = linesettings['version']
         decayDescs = linesettings['decayDescs']
         inputlocation = linesettings['inputLocation']
-        if self.getProp('Simulation') :
+        if self.getProp('Simulation') and not isTrigger :
             rootInTES = '/'.join(rootInTES.split('/')[:-1] + ['AllStreams'])
         if self.getProp('InputType').lower() != 'mdst' :
             inputlocation = os.path.join(rootInTES, inputlocation)
@@ -546,7 +554,7 @@ decayDescs = line.full_decay_descriptors()
                 desc.set_labX_aliases()
             elif aliases :
                 desc.set_aliases(aliases)
-            desctuple = DecayTreeTuple(desc.get_full_alias() + 'Tuple',
+            desctuple = DecayTreeTuple(desc.get_full_alias() + suffix + 'Tuple',
                                        ToolList = [])
             desctuple.configure_for_line(desc, inputlocation,
                                          linename, version, 
@@ -588,6 +596,9 @@ decayDescs = line.full_decay_descriptors()
                                  HLT1List = [],
                                  HLT2List = [],
                                  strippingList = []) :
+        decayDescCC = decayDesc.copy()
+        decayDescCC.cc = True
+
         sel = build_mc_unbiased_selection(decayDesc, arrow)
         selseq = SelectionSequence(decayDesc.get_full_alias() + '_MCSeq',
                                    TopSelection = sel)
@@ -611,8 +622,8 @@ decayDescs = line.full_decay_descriptors()
         lokituple = headBranch.addTupleTool('LoKi::Hybrid::TupleTool')
         lokituple.Preambulo = ['from LoKiPhysMC.decorators import *',
                                'from LoKiPhysMC.functions import mcMatch']
-        mcmatch = 'switch(mcMatch({0!r}), 1, 0)'.format(decayDesc.to_string(carets = False,
-                                                                            arrow = '==>'))
+        mcmatch = 'switch(mcMatch({0!r}), 1, 0)'.format(decayDescCC.to_string(carets = False,
+                                                                              arrow = '==>'))
         lokituple.Variables = {'mcMatch' : mcmatch}
 
 
@@ -620,7 +631,8 @@ decayDescs = line.full_decay_descriptors()
         self.UserAlgorithms.append(seq)
 
         mcdtt = MCDecayTreeTuple(decayDesc.get_full_alias() + '_MCDecayTreeTuple')
-        mcdtt.Decay = decayDesc.to_string(arrow = arrow, carets = True)
+        mcdtt.Decay = decayDescCC.to_string(arrow = arrow, carets = True)
+        mcdtt.ToolList += filter(lambda t : t.startswith('MC'), mcToolList)
         self.UserAlgorithms.append(mcdtt)
 
         return seq
@@ -686,8 +698,9 @@ class DaVinciScript(Script) :
                  extraopts = '', 
                  extraoptsfile = '',
                  datatype = None,
-                 diracversion = None,
-                 force = False) :
+                 diracversion = 'prod',
+                 force = False,
+                 mooreversion = 'latest') :
         from Configurables import GaudiSequencer, DaVinci, TupleToolStripping, \
             TupleToolTrigger
     
@@ -705,7 +718,8 @@ class DaVinciScript(Script) :
             dv.add_TrackScaleState()
 
         # Defines rootInTES, inputLocation, and decayDescs
-        lineopts = get_line_settings(linename, version, os.path.split(fname)[0], optssuffix, force)
+        lineopts = get_line_settings(linename, version, os.path.split(fname)[0], optssuffix, force,
+                                     mooreversion)
         lineopts, lineseq = dv.add_line_tuple_sequence(lineopts, 
                                                        toolList, mcToolList,
                                                        L0List, HLT1List, HLT2List, strippingList,
@@ -715,26 +729,38 @@ class DaVinciScript(Script) :
         if dataopts['Simulation'] :
             mcunbseqs = []
             for desc in lineopts['decayDescs'] :
-                mcunbseq = dv.add_mc_unbiased_sequence(desc)
+                mcunbseq = dv.add_mc_unbiased_sequence(desc,
+                                                       toolList = toolList,
+                                                       mcToolList = mcToolList,
+                                                       L0List = L0List,
+                                                       HLT1List = HLT1List,
+                                                       HLT2List = HLT2List,
+                                                       strippingList = strippingList)
                 mcunbseqs.append(mcunbseq)
         localns = dict(locals())
         localns.update(globals())
         if extraopts :
             exec extraopts in localns
         if extraoptsfile :
-            execfile(os.path.expandvars(extraoptsfile)) in localns 
+            if isinstance(extraoptsfile, (tuple, list)) :
+                for fextraopts in extraoptsfile :
+                    execfile(os.path.expandvars(fextraopts)) in localns 
+            else :
+                execfile(os.path.expandvars(extraoptsfile)) in localns 
 
         objsdict = {'dv' : dv}
 
         Script.__init__(self, fname, dv.extraobjs, objsdict)
 
-def get_line_settings(line, version, outputdir = '.', suffix = 'settings', force = False) :
+def get_line_settings(line, version, outputdir = '.', suffix = 'settings', force = False,
+                      mooreversion = 'latest') :
     fname = os.path.expandvars(os.path.join(outputdir, '_'.join([line, version, suffix + '.py'])))
     if not force and os.path.exists(fname) :
+        print 'reading', fname
         with open(fname) as f :
             opts = f.read()
         return eval(opts)
-    opts = DaVinci().get_line_settings(line, version)
+    opts = DaVinci().get_line_settings(line, version, mooreversion)
     try :
         with open(fname, 'w') as f :
             f.write(repr(opts))
@@ -743,9 +769,10 @@ def get_line_settings(line, version, outputdir = '.', suffix = 'settings', force
     return opts
 
 def get_data_opts(datafile, explicitTags = False, suffix = 'settings', datatype = None, 
-                  diracversion = None, force = False) :
+                  diracversion = 'prod', force = False) :
     fname = os.path.expandvars(datafile.replace('.py', '') + '_' + suffix + '.py')
     if not force and os.path.exists(fname) :
+        print 'reading', fname
         with open(fname) as f :
             opts = f.read()
         return eval(opts)

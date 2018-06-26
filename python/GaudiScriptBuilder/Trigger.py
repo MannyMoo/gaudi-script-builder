@@ -23,17 +23,16 @@ def int_tck(tck) :
     return tck
 
 def get_properties(tck, name, attr = '') :
-    if not attr :
-        return tckutils.getProperties(tck, name).values()[0]
-    attrs = attr.split('.')
-    if len(attrs) == 1 :
-        return get_properties(tck, name)[attr]
-    for attr in attrs :
-        props = get_properties(tck, name)
-        if not props.has_key(attr) or not props[attr] :
-            return None
-        name = props[attr]
-    return props[attr]
+    properties = tckutils.getProperties(tck)
+
+    name = name.split('/')[-1]
+    if attr :
+        attrs = attr.split('.')
+        for attr in attrs[:-1] :
+            name = properties[name][attr].split('/')[-1]
+        val = properties[name][attrs[-1]]
+        return val
+    return properties[name]
 
 class TriggerConfig(object) :
     __slots__ = ('tck',)
@@ -72,23 +71,28 @@ class TriggerLineConfig(LineConfigBase) :
 
     def get_filter_sequence(self) :
         seq = []
-        filter0Members = self.get_properties(attr = 'Filter0.Members')
-        if filter0Members :
-            seq += eval(filter0Members)
+        if self.get_properties(attr = 'Filter0') :
+            filter0Members = self.get_properties(attr = 'Filter0.Members')
+            if filter0Members :
+                seq += eval(filter0Members)
         filter1Members = self.get_properties(attr = 'Filter1.Members')
         if filter1Members :
             seq += eval(filter1Members)
         return seq
 
     def get_decay_descriptors(self) :
-        seq = filter(lambda alg : 'CombineParticles' in alg, self.get_filter_sequence())
+        seq = self.get_filter_sequence()
         alldescs = OrderedDict()
         for alg in seq :
             props = self.get_properties(alg)
+            if not 'DecayDescriptor' in props :
+                continue
             if props['DecayDescriptor'] :
                 descs = [props['DecayDescriptor']]
-            else :
+            elif 'DecayDescriptors' in props :
                 descs = eval(props['DecayDescriptors'])
+            else :
+                continue
             for desc in descs :
                 head, strippeddesc = head_descriptor(desc)
                 if alldescs.has_key(head) :

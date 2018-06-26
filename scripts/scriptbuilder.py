@@ -20,11 +20,12 @@ def main() :
     argparser.add_argument('--substitutions', default = '{}')
     argparser.add_argument('--optssuffix', default = 'settings')
     argparser.add_argument('--extraopts', default = '')
-    argparser.add_argument('--extraoptsfile', default = '')
+    argparser.add_argument('--extraoptsfile', default = '', nargs = '*')
     argparser.add_argument('--useTrackScaleState', default = 'True')
     argparser.add_argument('--datatype', default = None)
-    argparser.add_argument('--diracversion', default = None)
+    argparser.add_argument('--diracversion', default = 'prod')
     argparser.add_argument('--force', action = 'store_true', default = False)
+    argparser.add_argument('--mooreversion', default = 'latest')
     args = argparser.parse_args()
 
     opts = DaVinciScript(args.outputfile, args.version, args.linename, args.datafile,
@@ -41,7 +42,8 @@ def main() :
                          useTrackScaleState = eval(args.useTrackScaleState),
                          datatype = args.datatype,
                          diracversion = args.diracversion,
-                         force = args.force)
+                         force = args.force,
+                         mooreversion = args.mooreversion)
     fname = opts.write()
     print 'Created', fname
     return fname

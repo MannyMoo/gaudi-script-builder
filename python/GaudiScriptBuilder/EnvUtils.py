@@ -87,8 +87,9 @@ class Shell(object) :
                 break
             stdout += line
         # Read stderr til there's nothing left to read. 
-        while self.stderrpoller.poll(0) and testtimeout() :
+        while self.stderrpoller.poll(10) and testtimeout() :
             stderr += self.stderr.readline()
+
         return {'stdout' : stdout, 'stderr' : stderr, 'exitcode' : exitcode}
 
     def eval(self, cmd, polltime = 100, timeout = None, raiseerror = False) :
@@ -157,11 +158,13 @@ class LHCbEnv(Shell) :
                  exitcodeline = 'echo "*_*_*_* EXITCODE: $?"\n',
                  exittest = '*_*_*_* EXITCODE: ',
                  getexitcode = lambda line : int(line.rstrip('\n').split()[-1]),
-                 inittimeout = 600) :
+                 inittimeout = 600, ignoreenv = True) :
         # Probably more options could be considered here. 
         args = ['lb-run']
         if platform :
             args += ['-c', platform]
+        if ignoreenv :
+            args += ['-i']
         args += [env + '/' + version]
         args += [shell]
         Shell.__init__(self, args, exitcodeline, exittest, getexitcode, inittimeout)
