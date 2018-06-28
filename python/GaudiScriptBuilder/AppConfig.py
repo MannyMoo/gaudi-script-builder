@@ -59,8 +59,12 @@ def build_mc_unbiased_selection(decayDesc, arrow = '==>') :
     decayDescCC = decayDesc.copy()
     decayDescCC.cc = True
     algname = decayDesc.get_full_alias() + '_MCSel'
+    algnameconj = decayDesc.conjugate().get_full_alias() + '_MCSel'
     if algname in selections :
         return selections[algname]
+    elif algnameconj in selections :
+        return selections[algnameconj]
+
     if not decayDesc.daughters :
         alg = FilterDesktop(algname + '_Filter')
         if decayDesc.particle.name in mcbasicinputs :
@@ -78,27 +82,27 @@ def build_mc_unbiased_selection(decayDesc, arrow = '==>') :
                         RequiredSelections = [inputsel])
         selections[algname] = sel
         return sel
-    inputs = []
+    inputs = set()
     daughtercuts = {}
     for daughter in decayDescCC.daughters :
         originaldaughtercc = daughter.cc
         daughter.cc = True
         sel = build_mc_unbiased_selection(daughter, arrow)
         daughter.cc = originaldaughtercc
-        inputs.append(sel)
+        inputs.add(sel)
         #daughter.caret = True
         #daughtercuts[daughter.particle.name] = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
         #daughter.caret = False
     #comb = nCombiners[len(decayDesc.daughters)](algname + '_Comb')
     comb = CombineParticles(algname + '_Comb')
     # CombineParticles uses small cc, so set ishead = False
-    comb.DecayDescriptors = [decayDesc.to_string(depth = 1, ishead = False)]
+    comb.DecayDescriptors = [decayDesc.to_string(depth = 1).replace('CC', 'cc')]
     comb.MotherCut = 'mcMatch({0!r})'.format(decayDescCC.to_string(arrow))
     comb.Preambulo = preamble
     comb.DaughtersCuts = daughtercuts
     sel = Selection(algname,
                     Algorithm = comb,
-                    RequiredSelections = inputs)
+                    RequiredSelections = list(inputs))
     selections[algname] = sel
     return sel
 
@@ -631,6 +635,7 @@ decayDescs = line.full_decay_descriptors()
         self.UserAlgorithms.append(seq)
 
         mcdtt = MCDecayTreeTuple(decayDesc.get_full_alias() + '_MCDecayTreeTuple')
+        mcdtt.addBranches(decayDesc.branches())
         mcdtt.Decay = decayDescCC.to_string(arrow = arrow, carets = True)
         mcdtt.ToolList += filter(lambda t : t.startswith('MC'), mcToolList)
         self.UserAlgorithms.append(mcdtt)
